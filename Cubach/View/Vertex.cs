@@ -2,10 +2,12 @@ using System.Runtime.InteropServices;
 using OpenTK;
 using OpenTK.Graphics.OpenGL4;
 
-namespace Cubach.View.OpenGL
+namespace Cubach.View
 {
+    public interface IVertex { }
+
     [StructLayout(LayoutKind.Sequential)]
-    public struct VertexP3
+    public struct VertexP3 : IVertex
     {
         public readonly Vector3 Position;
 
@@ -20,7 +22,7 @@ namespace Cubach.View.OpenGL
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    public struct VertexP3N3
+    public struct VertexP3N3 : IVertex
     {
         public readonly Vector3 Position;
         public readonly Vector3 Normal;
@@ -38,7 +40,7 @@ namespace Cubach.View.OpenGL
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    public struct VertexP3N3T2
+    public struct VertexP3N3T2 : IVertex
     {
         public readonly Vector3 Position;
         public readonly Vector3 Normal;
@@ -59,7 +61,7 @@ namespace Cubach.View.OpenGL
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    public struct VertexP2T2C4
+    public struct VertexP2T2C4 : IVertex
     {
         public readonly Vector2 Position;
         public readonly Vector2 TexCoord;

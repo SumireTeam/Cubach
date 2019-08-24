@@ -23,7 +23,7 @@ namespace Cubach.View.OpenGL
         }
     }
 
-    public class Texture : IDisposable
+    public class Texture : ITexture, IDisposable
     {
         public readonly TextureHandle Handle;
 
@@ -36,6 +36,11 @@ namespace Cubach.View.OpenGL
         {
             GL.ActiveTexture(TextureUnit.Texture0 + slot);
             GL.BindTexture(TextureTarget.Texture2D, (int)Handle);
+        }
+
+        public static void Bind(Texture texture, int slot = 0)
+        {
+            texture.Bind(slot);
         }
 
         public void SetImage(Bitmap image, bool withAlpha = false)

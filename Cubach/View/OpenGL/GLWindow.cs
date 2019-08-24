@@ -2,19 +2,45 @@
 using OpenTK.Graphics;
 using OpenTK.Graphics.OpenGL4;
 using System;
+using System.IO;
+using System.Threading;
 
 namespace Cubach.View.OpenGL
 {
+    public class Configuration
+    {
+        public readonly string FontFamily;
+        public readonly int FontSize;
+
+        public Configuration(string fontFamily, int fontSize)
+        {
+            FontFamily = fontFamily;
+            FontSize = fontSize;
+        }
+    }
+
     public class GLWindow : IWindow
     {
+        private readonly Configuration config;
         private readonly GameWindow window;
 
         private VertexArray VAO;
         private VertexBuffer VBO;
-        private ShaderProgram Program;
+        private ShaderProgram CubeProgram;
+        private ShaderProgram TextProgram;
+        private SpriteBatch SpriteBatch;
+        private GLTextRenderer TextRenderer;
+
+        private float avgFPS = 60;
+        private string vendor = "";
+        private string renderer = "";
+        private string version = "";
+        private string glsl = "";
 
         public GLWindow(int width, int height, string title)
         {
+            config = Newtonsoft.Json.JsonConvert.DeserializeObject<Configuration>(File.ReadAllText("./config.json"));
+
             var graphicsMode = new GraphicsMode(new ColorFormat(8, 8, 8, 8), depth: 24, stencil: 0, samples: 4, accum: ColorFormat.Empty, buffers: 3);
             window = new GameWindow(width, height, graphicsMode, title, GameWindowFlags.Default, DisplayDevice.Default, 4, 0, GraphicsContextFlags.ForwardCompatible);
             window.Load += Window_Load;
@@ -24,8 +50,14 @@ namespace Cubach.View.OpenGL
 
         private void Window_Load(object sender, EventArgs e)
         {
-            Console.WriteLine("Renderer: {0} {1} {2}", GL.GetString(StringName.Vendor), GL.GetString(StringName.Renderer), GL.GetString(StringName.Version));
-            Console.WriteLine("GLSL version: {0}", GL.GetString(StringName.ShadingLanguageVersion));
+            vendor = string.Format("Vendor: {0}", GL.GetString(StringName.Vendor));
+            renderer = string.Format("Renderer: {0}", GL.GetString(StringName.Renderer));
+            version = string.Format("Version: {0}", GL.GetString(StringName.Version));
+            glsl = string.Format("GLSL version: {0}", GL.GetString(StringName.ShadingLanguageVersion));
+
+            Console.WriteLine(vendor);
+            Console.WriteLine(renderer);
+            Console.WriteLine(glsl);
 
             GL.DepthFunc(DepthFunction.Lequal);
             GL.Enable(EnableCap.DepthTest);
@@ -33,7 +65,7 @@ namespace Cubach.View.OpenGL
             GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
             GL.Enable(EnableCap.Blend);
 
-            //GL.Enable(EnableCap.Texture2D);
+            GL.Enable(EnableCap.Texture2D);
 
             GL.Enable(EnableCap.CullFace);
             GL.FrontFace(FrontFaceDirection.Ccw);
@@ -113,53 +145,28 @@ namespace Cubach.View.OpenGL
 
             VertexArray.Unbind();
 
-            string vsSrc = @"#version 400
-
-uniform mat4 mvp;
-
-layout(location = 0) in vec3 vert_position;
-layout(location = 1) in vec3 vert_normal;
-layout(location = 2) in vec2 vert_texCoord;
-
-out vec3 frag_position;
-out vec3 frag_normal;
-out vec2 frag_texCoord;
-
-void main()
-{
-    frag_position = vert_position;
-    frag_normal = vert_normal;
-    frag_texCoord = vert_texCoord;
-    gl_Position = mvp * vec4(vert_position, 1.0);
-}";
-
-            string fsSrc = @"#version 400
-
-in vec3 frag_position;
-in vec3 frag_normal;
-in vec2 frag_texCoord;
-
-layout(location = 0) out vec4 out_color;
-
-void main()
-{
-    vec3 light = normalize(vec3(0.2, 0.4, 0.8));
-    vec3 ambient = vec3(0.2);
-    vec3 diffuse = mix(vec3(0.0, 0.0, 0.1), vec3(0.5, 0.5, 0.4), (dot(frag_normal, light) + 1) / 2);
-    out_color = vec4(ambient + diffuse, 1.0);
-}";
-
-            using (var vs = new Shader(ShaderType.VertexShader))
-            using (var fs = new Shader(ShaderType.FragmentShader))
+            using (var vs = Shader.Create(ShaderType.VertexShader, File.ReadAllText("./Shaders/cube.vert")))
+            using (var fs = Shader.Create(ShaderType.FragmentShader, File.ReadAllText("./Shaders/cube.frag")))
             {
-                vs.Compile(vsSrc);
-                fs.Compile(fsSrc);
+                CubeProgram = ShaderProgram.Create(vs, fs);
 
-                Program = new ShaderProgram();
-                Program.AttachShader(vs);
-                Program.AttachShader(fs);
-                Program.Link();
+                Matrix4 mvp = Matrix4.Identity;
+                CubeProgram.SetUniform("mvp", ref mvp);
             }
+
+            using (var vs = Shader.Create(ShaderType.VertexShader, File.ReadAllText("./Shaders/text.vert")))
+            using (var fs = Shader.Create(ShaderType.FragmentShader, File.ReadAllText("./Shaders/text.frag")))
+            {
+                TextProgram = ShaderProgram.Create(vs, fs);
+
+                Matrix4 mvp = Matrix4.Identity;
+                TextProgram.SetUniform("mvp", ref mvp);
+
+                TextProgram.SetUniform("colorTexture", 0);
+            }
+
+            SpriteBatch = new SpriteBatch();
+            TextRenderer = new GLTextRenderer(SpriteBatch);
 
             Resize();
         }
@@ -182,7 +189,7 @@ void main()
             GL.ClearColor(0, 0, 0, 1);
             GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
 
-            Program.Use();
+            CubeProgram.Use();
 
             float aspect = window.Width / (float)window.Height;
             const float fovx = MathHelper.PiOver2;
@@ -200,12 +207,24 @@ void main()
             Matrix4 projection = Matrix4.CreatePerspectiveFieldOfView(fovy, aspect, 0.1f, 100);
 
             Matrix4 mvp = model * view * projection;
-
-            Program.SetUniform("mvp", ref mvp);
+            CubeProgram.SetUniform("mvp", ref mvp);
 
             VAO.Draw(PrimitiveType.Triangles, 0, 36);
 
+            TextProgram.Use();
+
+            mvp = Matrix4.CreateOrthographicOffCenter(0, window.Width, window.Height, 0, -1, 1);
+            TextProgram.SetUniform("mvp", ref mvp);
+
+            // Apply exponential smoothing to the FPS.
+            float fps = (float)(1 / e.Time);
+            avgFPS += 0.1f * (fps - avgFPS);
+
+            string text = $"FPS {(int)Math.Floor(avgFPS)}\n{vendor}\n{renderer}\n{version}\n{glsl}";
+            TextRenderer.DrawString(new Vector2(8, 8), config.FontFamily, config.FontSize, text, new Color4(0.9f, 0.9f, 0.9f, 0.9f));
+
             window.SwapBuffers();
+            Thread.Sleep(1);
         }
 
         public void Run()
@@ -215,9 +234,14 @@ void main()
 
         public void Dispose()
         {
+            TextRenderer.Dispose();
+            SpriteBatch.Dispose();
+
             VAO.Dispose();
             VBO.Dispose();
-            Program.Dispose();
+
+            TextProgram.Dispose();
+            CubeProgram.Dispose();
 
             window.Dispose();
         }

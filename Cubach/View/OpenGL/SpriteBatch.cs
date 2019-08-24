@@ -6,9 +6,9 @@ using OpenTK.Graphics.OpenGL4;
 
 namespace Cubach.View.OpenGL
 {
-    public class SpriteBatch : IDisposable
+    public class SpriteBatch : ISpriteBatch<Texture>, IDisposable
     {
-        protected readonly List<Sprite> Sprites = new List<Sprite>();
+        protected readonly List<Sprite<Texture>> Sprites = new List<Sprite<Texture>>();
         protected readonly VertexArray VertexArray;
         protected readonly VertexBuffer VertexBuffer;
 
@@ -30,7 +30,7 @@ namespace Cubach.View.OpenGL
             Sprites.Clear();
         }
 
-        public void Draw(Sprite sprite)
+        public void Draw(Sprite<Texture> sprite)
         {
             Sprites.Add(sprite);
         }
@@ -70,7 +70,7 @@ namespace Cubach.View.OpenGL
                 VertexBuffer.SetData(vertexes, BufferUsageHint.DynamicDraw);
 
                 Texture texture = group.Key;
-                texture.Bind();
+                Texture.Bind(texture);
 
                 VertexArray.Draw(PrimitiveType.Triangles, 0, vertexCount);
                 VertexArray.Unbind();

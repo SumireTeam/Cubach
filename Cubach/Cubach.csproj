@@ -36,6 +36,9 @@
     <StartupObject />
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Newtonsoft.Json, Version=12.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <HintPath>..\packages\Newtonsoft.Json.12.0.2\lib\net45\Newtonsoft.Json.dll</HintPath>
+    </Reference>
     <Reference Include="OpenTK, Version=3.1.0.0, Culture=neutral, PublicKeyToken=bad199fe84eb3df4, processorArchitecture=MSIL">
       <HintPath>..\packages\OpenTK.3.1.0\lib\net20\OpenTK.dll</HintPath>
     </Reference>
@@ -47,24 +50,44 @@
     <Compile Include="Model\Block.cs" />
     <Compile Include="Model\Chunk.cs" />
     <Compile Include="Model\World.cs" />
+    <Compile Include="View\ISpriteBatch.cs" />
+    <Compile Include="View\ITexture.cs" />
     <Compile Include="View\OpenGL\GLObjectHandle.cs" />
+    <Compile Include="View\OpenGL\GLTextRenderer.cs" />
     <Compile Include="View\OpenGL\GLWindow.cs" />
     <Compile Include="View\IWindow.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="View\OpenGL\Shader.cs" />
     <Compile Include="View\OpenGL\ShaderProgram.cs" />
-    <Compile Include="View\OpenGL\Sprite.cs" />
+    <Compile Include="View\VertexAttribute.cs" />
+    <Compile Include="View\Sprite.cs" />
     <Compile Include="View\OpenGL\SpriteBatch.cs" />
     <Compile Include="View\OpenGL\Texture.cs" />
-    <Compile Include="View\OpenGL\Vertex.cs" />
+    <Compile Include="View\Vertex.cs" />
     <Compile Include="View\OpenGL\VertexArray.cs" />
     <Compile Include="View\OpenGL\VertexBuffer.cs" />
+    <Compile Include="View\TextRenderer.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
+    <None Include="config.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Include="OpenTK.dll.config" />
     <None Include="packages.config" />
+    <None Include="Shaders\text.frag">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Shaders\text.vert">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Shaders\cube.frag">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Shaders\cube.vert">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Content Include=".gitignore" />
