@@ -1,4 +1,3 @@
-using System;
 using System.Drawing;
 using System.Drawing.Imaging;
 using OpenTK.Graphics.OpenGL4;
@@ -23,11 +22,11 @@ namespace Cubach.View.OpenGL
         }
     }
 
-    public class Texture : ITexture, IDisposable
+    public class GLTexture : ITexture
     {
         public readonly TextureHandle Handle;
 
-        public Texture()
+        public GLTexture()
         {
             Handle = TextureHandle.Create();
         }
@@ -38,7 +37,7 @@ namespace Cubach.View.OpenGL
             GL.BindTexture(TextureTarget.Texture2D, (int)Handle);
         }
 
-        public static void Bind(Texture texture, int slot = 0)
+        public static void Bind(GLTexture texture, int slot = 0)
         {
             texture.Bind(slot);
         }

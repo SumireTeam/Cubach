@@ -10,6 +10,6 @@ void main()
 {
     vec3 light = normalize(vec3(0.2, 0.4, 0.8));
     vec3 ambient = vec3(0.2);
-    vec3 diffuse = mix(vec3(0.0, 0.0, 0.1), vec3(0.5, 0.5, 0.4), (dot(frag_normal, light) + 1) / 2);
+    vec3 diffuse = mix(vec3(0.0, 0.0, 0.1), vec3(0.5, 0.5, 0.45), (dot(frag_normal, light) + 1) / 2);
     out_color = vec4(ambient + diffuse, 1.0);
 }

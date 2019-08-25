@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using OpenTK.Graphics.OpenGL4;
 
 namespace Cubach.View.OpenGL
@@ -38,12 +39,20 @@ namespace Cubach.View.OpenGL
             GL.BindVertexArray(0);
         }
 
+        private static readonly Dictionary<VertexAttributeType, VertexAttribPointerType> typeMap = new Dictionary<VertexAttributeType, VertexAttribPointerType>
+        {
+            [VertexAttributeType.Float] = VertexAttribPointerType.Float,
+        };
+
         public void SetVertexAttribute(int index, VertexAttribute attribute, VertexBuffer vertexBuffer)
         {
             Bind();
             vertexBuffer.Bind();
             GL.EnableVertexAttribArray(index);
-            GL.VertexAttribPointer(index, attribute.Size, attribute.Type, attribute.Normalized, attribute.Stride, attribute.Offset);
+
+            VertexAttribPointerType glVertexAttribType = typeMap[attribute.Type];
+            GL.VertexAttribPointer(index, attribute.Size, glVertexAttribType, attribute.Normalized, attribute.Stride, attribute.Offset);
+
             VertexBuffer.Unbind();
         }
 

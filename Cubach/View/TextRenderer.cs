@@ -6,24 +6,9 @@ using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
 using System.Drawing.Text;
-using System.Threading;
 
 namespace Cubach.View
 {
-    public struct TextureRegion<TTexture> where TTexture : ITexture
-    {
-        public readonly TTexture Texture;
-        public readonly Vector2 UVMin;
-        public readonly Vector2 UVMax;
-
-        public TextureRegion(TTexture texture, Vector2 uvMin, Vector2 uvMax)
-        {
-            Texture = texture;
-            UVMin = uvMin;
-            UVMax = uvMax;
-        }
-    }
-
     public class FontPage<TTexture> : IDisposable where TTexture : ITexture
     {
         public readonly TTexture Texture;
@@ -37,20 +22,23 @@ namespace Cubach.View
 
         public void Dispose()
         {
-            (Texture as IDisposable)?.Dispose();
+            Texture.Dispose();
         }
     }
 
-    public abstract class TextRenderer<TTexture> : IDisposable where TTexture : ITexture
+    public class TextRenderer<TTexture> : IDisposable where TTexture : ITexture
     {
-        private readonly ISpriteBatch<TTexture> spriteBatch;
+        private readonly ITextureFactory<TTexture> textureFactory;
+        private readonly SpriteBatch<TTexture> spriteBatch;
+
         private readonly Dictionary<string, FontPage<TTexture>> fontPages = new Dictionary<string, FontPage<TTexture>>();
 
         private const int pageCols = 32;
         private const int pageRows = 32;
 
-        public TextRenderer(ISpriteBatch<TTexture> spriteBatch)
+        public TextRenderer(ITextureFactory<TTexture> textureFactory, SpriteBatch<TTexture> spriteBatch)
         {
+            this.textureFactory = textureFactory;
             this.spriteBatch = spriteBatch;
         }
 
@@ -98,7 +86,14 @@ namespace Cubach.View
             return bitmap;
         }
 
-        public abstract FontPage<TTexture> CreateFontPage(string fontFamily, int emSize, int page);
+        public FontPage<TTexture> CreateFontPage(string fontFamily, int emSize, int page)
+        {
+            using (var bitmap = CreateFontPageBitmap(fontFamily, emSize, page, out Dictionary<char, Vector2> sizes))
+            {
+                var texture = this.textureFactory.Create(bitmap, true);
+                return new FontPage<TTexture>(texture, sizes);
+            }
+        }
 
         public FontPage<TTexture> GetFontPage(string fontFamily, int emSize, int page)
         {
@@ -155,7 +150,7 @@ namespace Cubach.View
                 {
                     FontPage<TTexture> page = GetFontPage(fontFamily, emSize, ch);
                     TextureRegion<TTexture> region = GetCharTextureRegion(fontFamily, emSize, ch);
-                    var sprite = new Sprite<TTexture>(pos, size, region.Texture, color, region.UVMin, region.UVMax);
+                    var sprite = new Sprite<TTexture>(pos, size, region, color);
                     spriteBatch.Draw(sprite);
                     pos.X += page.CharSizes[ch].X;
                 }
@@ -166,9 +161,9 @@ namespace Cubach.View
 
         public void Dispose()
         {
-            foreach (var texture in fontPages.Values)
+            foreach (var page in fontPages.Values)
             {
-                (texture as IDisposable)?.Dispose();
+                page.Dispose();
             }
 
             fontPages.Clear();

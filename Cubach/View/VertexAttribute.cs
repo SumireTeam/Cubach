@@ -2,15 +2,20 @@
 
 namespace Cubach.View
 {
+    public enum VertexAttributeType
+    {
+        Float,
+    }
+
     public struct VertexAttribute
     {
-        public readonly VertexAttribPointerType Type;
+        public readonly VertexAttributeType Type;
         public readonly int Size;
         public readonly bool Normalized;
         public readonly int Stride;
         public readonly int Offset;
 
-        public VertexAttribute(VertexAttribPointerType type, int size, int stride, int offset, bool normalized = false)
+        public VertexAttribute(VertexAttributeType type, int size, int stride, int offset, bool normalized = false)
         {
             Type = type;
             Size = size;

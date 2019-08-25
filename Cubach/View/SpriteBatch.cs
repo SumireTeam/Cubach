@@ -2,42 +2,32 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using OpenTK;
-using OpenTK.Graphics.OpenGL4;
 
-namespace Cubach.View.OpenGL
+namespace Cubach.View
 {
-    public class SpriteBatch : ISpriteBatch<Texture>, IDisposable
+    public class SpriteBatch<TTexture> : IDisposable where TTexture : ITexture
     {
-        protected readonly List<Sprite<Texture>> Sprites = new List<Sprite<Texture>>();
-        protected readonly VertexArray VertexArray;
-        protected readonly VertexBuffer VertexBuffer;
+        private readonly List<Sprite<TTexture>> sprites = new List<Sprite<TTexture>>();
+        private readonly IMesh<VertexP2T2C4> mesh;
 
-        public SpriteBatch()
+        public SpriteBatch(IMeshFactory meshFactory)
         {
-            VertexArray = new VertexArray();
-            VertexBuffer = new VertexBuffer();
-
-            for (int i = 0; i < VertexP2T2C4.VertexAttributes.Length; ++i)
-            {
-                VertexArray.SetVertexAttribute(i, VertexP2T2C4.VertexAttributes[i], VertexBuffer);
-            }
-
-            VertexArray.Unbind();
+            mesh = meshFactory.Create(new VertexP2T2C4[0], MeshUsageHint.Dynamic);
         }
 
         public void Begin()
         {
-            Sprites.Clear();
+            sprites.Clear();
         }
 
-        public void Draw(Sprite<Texture> sprite)
+        public void Draw(Sprite<TTexture> sprite)
         {
-            Sprites.Add(sprite);
+            sprites.Add(sprite);
         }
 
         public void End()
         {
-            var groups = Sprites.GroupBy(sprite => sprite.Texture);
+            var groups = sprites.GroupBy(sprite => sprite.TextureRegion.Texture);
             foreach (var group in groups)
             {
                 int spriteCount = group.Count();
@@ -51,10 +41,10 @@ namespace Cubach.View.OpenGL
                     Vector2 p3 = sprite.Position + sprite.Size;
                     Vector2 p4 = new Vector2(sprite.Position.X + sprite.Size.X, sprite.Position.Y);
 
-                    Vector2 t1 = new Vector2(sprite.UVMin.X, sprite.UVMax.Y);
-                    Vector2 t2 = sprite.UVMin;
-                    Vector2 t3 = new Vector2(sprite.UVMax.X, sprite.UVMin.Y);
-                    Vector2 t4 = sprite.UVMax;
+                    Vector2 t1 = new Vector2(sprite.TextureRegion.UVMin.X, sprite.TextureRegion.UVMax.Y);
+                    Vector2 t2 = sprite.TextureRegion.UVMin;
+                    Vector2 t3 = new Vector2(sprite.TextureRegion.UVMax.X, sprite.TextureRegion.UVMin.Y);
+                    Vector2 t4 = sprite.TextureRegion.UVMax;
 
                     Vector4 color = new Vector4(sprite.Color.R, sprite.Color.G, sprite.Color.B, sprite.Color.A);
 
@@ -67,22 +57,19 @@ namespace Cubach.View.OpenGL
                     vertexes[index++] = new VertexP2T2C4(p4, t4, color);
                 }
 
-                VertexBuffer.SetData(vertexes, BufferUsageHint.DynamicDraw);
+                mesh.SetData(vertexes, MeshUsageHint.Dynamic);
 
-                Texture texture = group.Key;
-                Texture.Bind(texture);
-
-                VertexArray.Draw(PrimitiveType.Triangles, 0, vertexCount);
-                VertexArray.Unbind();
+                TTexture texture = group.Key;
+                texture.Bind();
+                mesh.Draw();
             }
 
-            Sprites.Clear();
+            sprites.Clear();
         }
 
         public void Dispose()
         {
-            VertexBuffer.Dispose();
-            VertexArray.Dispose();
+            mesh.Dispose();
         }
     }
 }
