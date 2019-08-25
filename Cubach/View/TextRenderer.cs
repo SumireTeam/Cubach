@@ -49,34 +49,56 @@ namespace Cubach.View
             var bitmap = new Bitmap(width, height, PixelFormat.Format32bppArgb);
 
             using (var graphics = Graphics.FromImage(bitmap))
-            using (var font = new Font(fontFamily, emSize))
-            using (var brush = new SolidBrush(Color.White))
             {
-                graphics.CompositingMode = CompositingMode.SourceOver;
-                graphics.CompositingQuality = CompositingQuality.HighQuality;
-                graphics.InterpolationMode = InterpolationMode.HighQualityBilinear;
-                graphics.PixelOffsetMode = PixelOffsetMode.HighQuality;
-                graphics.SmoothingMode = SmoothingMode.HighQuality;
-                graphics.TextRenderingHint = TextRenderingHint.AntiAlias;
-
-                graphics.Clear(Color.Transparent);
-
-                SizeF s = graphics.MeasureString("||", font);
-
-                for (int i = 0; i < pageCols; ++i)
+                Font font;
+                if (fontFamily == "Open Sans")
                 {
-                    for (int j = 0; j < pageRows; ++j)
+                    using (var fontCollection = new PrivateFontCollection())
                     {
-                        int x = emSize + 4 * i * emSize;
-                        int y = emSize + 4 * j * emSize;
-
-                        char ch = (char)(i + pageCols * j + pageCols * pageRows * page);
-                        string str = ch.ToString();
-
-                        graphics.DrawString(str, font, brush, x, y);
-                        SizeF size = graphics.MeasureString($"|{str}|", font);
-                        sizes.Add(ch, new Vector2(size.Width - s.Width, size.Height));
+                        fontCollection.AddFontFile("./Fonts/OpenSans/OpenSans-Semibold.ttf");
+                        font = new Font(fontCollection.Families[0], emSize, FontStyle.Bold);
                     }
+                }
+                else
+                {
+                    font = new Font(fontFamily, emSize, FontStyle.Bold);
+                }
+
+                try
+                {
+                    using (var brush = new SolidBrush(Color.White))
+                    {
+                        graphics.CompositingMode = CompositingMode.SourceCopy;
+                        graphics.CompositingQuality = CompositingQuality.HighQuality;
+                        graphics.InterpolationMode = InterpolationMode.HighQualityBilinear;
+                        graphics.PixelOffsetMode = PixelOffsetMode.HighQuality;
+                        graphics.SmoothingMode = SmoothingMode.HighQuality;
+                        graphics.TextRenderingHint = TextRenderingHint.AntiAlias;
+
+                        graphics.Clear(Color.Transparent);
+
+                        SizeF s = graphics.MeasureString("||", font);
+
+                        for (int i = 0; i < pageCols; ++i)
+                        {
+                            for (int j = 0; j < pageRows; ++j)
+                            {
+                                int x = emSize + 4 * i * emSize;
+                                int y = emSize + 4 * j * emSize;
+
+                                char ch = (char)(i + pageCols * j + pageCols * pageRows * page);
+                                string str = ch.ToString();
+
+                                graphics.DrawString(str, font, brush, x, y);
+                                SizeF size = graphics.MeasureString($"|{str}|", font);
+                                sizes.Add(ch, new Vector2(size.Width - s.Width, size.Height));
+                            }
+                        }
+                    }
+                }
+                finally
+                {
+                    font.Dispose();
                 }
             }
 

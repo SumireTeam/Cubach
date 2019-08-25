@@ -56,7 +56,7 @@ namespace Cubach.View.OpenGL
 
         private void Window_RenderFrame(object sender, FrameEventArgs e)
         {
-            GL.ClearColor(0, 0, 0, 1);
+            GL.ClearColor(0.6f, 0.7f, 0.8f, 1);
             GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
 
             RenderFrame(sender, new TimeEventArgs((float)e.Time));

@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace Cubach.Model
+﻿namespace Cubach.Model
 {
     public class Chunk
     {
@@ -13,9 +7,5 @@ namespace Cubach.Model
         public const int Height = 32;
 
         public readonly Block[,,] Blocks = new Block[Length, Width, Height];
-
-        public Chunk()
-        {
-        }
     }
 }

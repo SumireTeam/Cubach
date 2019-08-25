@@ -49,7 +49,9 @@
   <ItemGroup>
     <Compile Include="Model\Block.cs" />
     <Compile Include="Model\Chunk.cs" />
+    <Compile Include="Model\ChunkGenerator.cs" />
     <Compile Include="Model\World.cs" />
+    <Compile Include="View\ChunkRenderer.cs" />
     <Compile Include="View\IMesh.cs" />
     <Compile Include="View\IMeshFactory.cs" />
     <Compile Include="View\ITexture.cs" />
@@ -80,6 +82,12 @@
     <None Include="config.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Include="Fonts\OpenSans\OpenSans-Regular.ttf">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Fonts\OpenSans\OpenSans-Semibold.ttf">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Include="OpenTK.dll.config" />
     <None Include="packages.config" />
     <None Include="Shaders\text.frag">
@@ -97,6 +105,9 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include=".gitignore" />
+    <Content Include="Fonts\OpenSans\Apache License.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

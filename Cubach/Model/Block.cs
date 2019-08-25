@@ -2,14 +2,39 @@
 
 namespace Cubach.Model
 {
+    public struct BlockType
+    {
+        public string Name;
+        public bool Solid;
+        public bool Transparent;
+
+        public BlockType(string name, bool solid = true, bool transparent = false)
+        {
+            Name = name;
+            Solid = solid;
+            Transparent = transparent;
+        }
+    }
+
     [StructLayout(LayoutKind.Sequential)]
     public struct Block
     {
-        public readonly int Type;
+        public static readonly BlockType[] Types;
 
-        public Block(int type)
+        static Block()
         {
-            Type = type;
+            Types = new[]
+            {
+                new BlockType("Air", solid: false, transparent: true),
+                new BlockType("Solid"),
+            };
         }
+
+        public readonly int TypeID;
+        public Block(int typeID) => TypeID = typeID;
+        public BlockType Type => Types[TypeID];
+        public string Name => Type.Name;
+        public bool Solid => Type.Solid;
+        public bool Transparent => Type.Transparent;
     }
 }
