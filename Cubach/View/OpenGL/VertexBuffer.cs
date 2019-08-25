@@ -14,30 +14,18 @@ namespace Cubach.View.OpenGL
             return new VertexBufferHandle(handle);
         }
 
-        protected override void ReleaseHandle()
-        {
-            GL.DeleteBuffer(Handle);
-        }
+        protected override void ReleaseHandle() => GL.DeleteBuffer(Handle);
     }
 
     public sealed class VertexBuffer : IDisposable
     {
         public readonly VertexBufferHandle Handle;
 
-        public VertexBuffer()
-        {
-            Handle = VertexBufferHandle.Create();
-        }
+        public VertexBuffer() => Handle = VertexBufferHandle.Create();
 
-        public void Bind()
-        {
-            GL.BindBuffer(BufferTarget.ArrayBuffer, (int)Handle);
-        }
+        public void Bind() => GL.BindBuffer(BufferTarget.ArrayBuffer, (int)Handle);
 
-        public static void Unbind()
-        {
-            GL.BindBuffer(BufferTarget.ArrayBuffer, 0);
-        }
+        public static void Unbind() => GL.BindBuffer(BufferTarget.ArrayBuffer, 0);
 
         public void SetData<T>(T[] data, BufferUsageHint hint = BufferUsageHint.StaticDraw) where T : struct
         {
@@ -45,9 +33,6 @@ namespace Cubach.View.OpenGL
             GL.BufferData(BufferTarget.ArrayBuffer, Marshal.SizeOf<T>() * data.Length, data, hint);
         }
 
-        public void Dispose()
-        {
-            Handle.Dispose();
-        }
+        public void Dispose() => Handle.Dispose();
     }
 }

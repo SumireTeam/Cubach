@@ -14,30 +14,18 @@ namespace Cubach.View.OpenGL
             return new VertexArrayHandle(handle);
         }
 
-        protected override void ReleaseHandle()
-        {
-            GL.DeleteVertexArray(Handle);
-        }
+        protected override void ReleaseHandle() => GL.DeleteVertexArray(Handle);
     }
 
     public sealed class VertexArray : IDisposable
     {
         public readonly VertexArrayHandle Handle;
 
-        public VertexArray()
-        {
-            Handle = VertexArrayHandle.Create();
-        }
+        public VertexArray() => Handle = VertexArrayHandle.Create();
 
-        public void Bind()
-        {
-            GL.BindVertexArray((int)Handle);
-        }
+        public void Bind() => GL.BindVertexArray((int)Handle);
 
-        public static void Unbind()
-        {
-            GL.BindVertexArray(0);
-        }
+        public static void Unbind() => GL.BindVertexArray(0);
 
         private static readonly Dictionary<VertexAttributeType, VertexAttribPointerType> typeMap = new Dictionary<VertexAttributeType, VertexAttribPointerType>
         {
@@ -62,9 +50,6 @@ namespace Cubach.View.OpenGL
             GL.DrawArrays(type, first, count);
         }
 
-        public void Dispose()
-        {
-            Handle.Dispose();
-        }
+        public void Dispose() => Handle.Dispose();
     }
 }

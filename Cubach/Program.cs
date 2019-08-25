@@ -139,10 +139,7 @@ namespace Cubach
             }
         }
 
-        private void Window_Resize(object sender, EventArgs e)
-        {
-            GL.Viewport(0, 0, window.Width, window.Height);
-        }
+        private void Window_Resize(object sender, EventArgs e) => GL.Viewport(0, 0, window.Width, window.Height);
 
         private void Window_RenderFrame(object sender, TimeEventArgs e)
         {
@@ -180,10 +177,7 @@ namespace Cubach
             textRenderer.DrawString(new Vector2(8, 8), config.FontFamily, config.FontSize, text, new Color4(0.9f, 0.9f, 0.9f, 0.9f));
         }
 
-        private void Run()
-        {
-            window.Run();
-        }
+        private void Run() => window.Run();
 
         public void Dispose()
         {

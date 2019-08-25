@@ -16,20 +16,14 @@ namespace Cubach.View.OpenGL
             return new TextureHandle(handle);
         }
 
-        protected override void ReleaseHandle()
-        {
-            GL.DeleteTexture(Handle);
-        }
+        protected override void ReleaseHandle() => GL.DeleteTexture(Handle);
     }
 
     public class GLTexture : ITexture
     {
         public readonly TextureHandle Handle;
 
-        public GLTexture()
-        {
-            Handle = TextureHandle.Create();
-        }
+        public GLTexture() => Handle = TextureHandle.Create();
 
         public void Bind(int slot = 0)
         {
@@ -37,10 +31,7 @@ namespace Cubach.View.OpenGL
             GL.BindTexture(TextureTarget.Texture2D, (int)Handle);
         }
 
-        public static void Bind(GLTexture texture, int slot = 0)
-        {
-            texture.Bind(slot);
-        }
+        public static void Bind(GLTexture texture, int slot = 0) => texture.Bind(slot);
 
         public void SetImage(Bitmap image, bool withAlpha = false)
         {
@@ -76,9 +67,6 @@ namespace Cubach.View.OpenGL
             GL.GenerateMipmap(GenerateMipmapTarget.Texture2D);
         }
 
-        public void Dispose()
-        {
-            Handle.Dispose();
-        }
+        public void Dispose() => Handle.Dispose();
     }
 }

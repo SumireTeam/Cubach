@@ -28,10 +28,7 @@ namespace Cubach.View
             Position = position;
         }
 
-        public VertexAttribute[] GetVertexAttributes()
-        {
-            return VertexAttributes;
-        }
+        public VertexAttribute[] GetVertexAttributes() => VertexAttributes;
     }
 
     [StructLayout(LayoutKind.Sequential)]
@@ -57,10 +54,7 @@ namespace Cubach.View
             Normal = normal;
         }
 
-        public VertexAttribute[] GetVertexAttributes()
-        {
-            return VertexAttributes;
-        }
+        public VertexAttribute[] GetVertexAttributes() => VertexAttributes;
     }
 
     [StructLayout(LayoutKind.Sequential)]
@@ -89,10 +83,7 @@ namespace Cubach.View
             TexCoord = texCoord;
         }
 
-        public VertexAttribute[] GetVertexAttributes()
-        {
-            return VertexAttributes;
-        }
+        public VertexAttribute[] GetVertexAttributes() => VertexAttributes;
     }
 
     [StructLayout(LayoutKind.Sequential)]
@@ -122,9 +113,6 @@ namespace Cubach.View
         }
 
 
-        public VertexAttribute[] GetVertexAttributes()
-        {
-            return VertexAttributes;
-        }
+        public VertexAttribute[] GetVertexAttributes() => VertexAttributes;
     }
 }

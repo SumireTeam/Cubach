@@ -6,15 +6,9 @@ namespace Cubach.View.OpenGL
     {
         public int Handle { get; private set; }
 
-        public GLObjectHandle(int handle)
-        {
-            Handle = handle;
-        }
+        public GLObjectHandle(int handle) => Handle = handle;
 
-        public static explicit operator int(GLObjectHandle handle)
-        {
-            return handle.Handle;
-        }
+        public static explicit operator int(GLObjectHandle handle) => handle.Handle;
 
         protected abstract void ReleaseHandle();
 

@@ -20,15 +20,8 @@ namespace Cubach.View
 
         public Sprite(Vector2 position, Vector2 size, TextureRegion<TTexture> textureRegion) : this(position, size, textureRegion, Color4.White) { }
 
-        public Sprite<TTexture> SetPosition(Vector2 position)
-        {
-            return new Sprite<TTexture>(position, Size, TextureRegion, Color);
-        }
-
-        public Sprite<TTexture> SetSize(Vector2 size)
-        {
-            return new Sprite<TTexture>(Position, size, TextureRegion, Color);
-        }
+        public Sprite<TTexture> SetPosition(Vector2 position) => new Sprite<TTexture>(position, Size, TextureRegion, Color);
+        public Sprite<TTexture> SetSize(Vector2 size) => new Sprite<TTexture>(Position, size, TextureRegion, Color);
 
         public Sprite<TTexture> FlipX()
         {

@@ -15,25 +15,16 @@ namespace Cubach.View.OpenGL
             return new ShaderProgramHandle(handle);
         }
 
-        protected override void ReleaseHandle()
-        {
-            GL.DeleteProgram(Handle);
-        }
+        protected override void ReleaseHandle() => GL.DeleteProgram(Handle);
     }
 
     public sealed class ShaderProgram : IDisposable
     {
         public readonly ShaderProgramHandle Handle;
 
-        public ShaderProgram()
-        {
-            Handle = ShaderProgramHandle.Create();
-        }
+        public ShaderProgram() => Handle = ShaderProgramHandle.Create();
 
-        public void AttachShader(Shader shader)
-        {
-            GL.AttachShader((int)Handle, (int)shader.Handle);
-        }
+        public void AttachShader(Shader shader) => GL.AttachShader((int)Handle, (int)shader.Handle);
 
         public void Link()
         {
@@ -113,14 +104,8 @@ namespace Cubach.View.OpenGL
             GL.UniformMatrix4(GetUniformLocation(name), transpose, ref value);
         }
 
-        public void Use()
-        {
-            GL.UseProgram((int)Handle);
-        }
+        public void Use() => GL.UseProgram((int)Handle);
 
-        public void Dispose()
-        {
-            Handle.Dispose();
-        }
+        public void Dispose() => Handle.Dispose();
     }
 }

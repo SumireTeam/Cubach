@@ -52,10 +52,7 @@ namespace Cubach.View.OpenGL
             Resize(sender, e);
         }
 
-        private void Window_Resize(object sender, EventArgs e)
-        {
-            Resize(sender, e);
-        }
+        private void Window_Resize(object sender, EventArgs e) => Resize(sender, e);
 
         private void Window_RenderFrame(object sender, FrameEventArgs e)
         {
@@ -68,19 +65,9 @@ namespace Cubach.View.OpenGL
             Thread.Sleep(1);
         }
 
-        private void Window_Unload(object sender, EventArgs e)
-        {
-            Unload(sender, e);
-        }
+        private void Window_Unload(object sender, EventArgs e) => Unload(sender, e);
 
-        public void Run()
-        {
-            window.Run();
-        }
-
-        public void Dispose()
-        {
-            window.Dispose();
-        }
+        public void Run() => window.Run();
+        public void Dispose() => window.Dispose();
     }
 }

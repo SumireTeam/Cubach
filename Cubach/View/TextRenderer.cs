@@ -20,10 +20,7 @@ namespace Cubach.View
             CharSizes = sizes;
         }
 
-        public void Dispose()
-        {
-            Texture.Dispose();
-        }
+        public void Dispose() => Texture.Dispose();
     }
 
     public class TextRenderer<TTexture> : IDisposable where TTexture : ITexture
@@ -90,7 +87,7 @@ namespace Cubach.View
         {
             using (var bitmap = CreateFontPageBitmap(fontFamily, emSize, page, out Dictionary<char, Vector2> sizes))
             {
-                var texture = this.textureFactory.Create(bitmap, true);
+                var texture = textureFactory.Create(bitmap, true);
                 return new FontPage<TTexture>(texture, sizes);
             }
         }

@@ -10,20 +10,11 @@ namespace Cubach.View
         private readonly List<Sprite<TTexture>> sprites = new List<Sprite<TTexture>>();
         private readonly IMesh<VertexP2T2C4> mesh;
 
-        public SpriteBatch(IMeshFactory meshFactory)
-        {
-            mesh = meshFactory.Create(new VertexP2T2C4[0], MeshUsageHint.Dynamic);
-        }
+        public SpriteBatch(IMeshFactory meshFactory) => mesh = meshFactory.Create(new VertexP2T2C4[0], MeshUsageHint.Dynamic);
 
-        public void Begin()
-        {
-            sprites.Clear();
-        }
+        public void Begin() => sprites.Clear();
 
-        public void Draw(Sprite<TTexture> sprite)
-        {
-            sprites.Add(sprite);
-        }
+        public void Draw(Sprite<TTexture> sprite) => sprites.Add(sprite);
 
         public void End()
         {
@@ -67,9 +58,6 @@ namespace Cubach.View
             sprites.Clear();
         }
 
-        public void Dispose()
-        {
-            mesh.Dispose();
-        }
+        public void Dispose() => mesh.Dispose();
     }
 }

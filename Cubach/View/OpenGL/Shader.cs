@@ -13,10 +13,7 @@ namespace Cubach.View.OpenGL
             return new ShaderHandle(handle);
         }
 
-        protected override void ReleaseHandle()
-        {
-            GL.DeleteShader(Handle);
-        }
+        protected override void ReleaseHandle() => GL.DeleteShader(Handle);
     }
 
     public sealed class Shader : IDisposable
@@ -50,9 +47,6 @@ namespace Cubach.View.OpenGL
             return shader;
         }
 
-        public void Dispose()
-        {
-            Handle.Dispose();
-        }
+        public void Dispose() => Handle.Dispose();
     }
 }

@@ -6,10 +6,7 @@ namespace Cubach.View
     {
         public readonly float Time;
 
-        public TimeEventArgs(float time) : base()
-        {
-            Time = time;
-        }
+        public TimeEventArgs(float time) : base() => Time = time;
     }
 
     public interface IWindow : IDisposable

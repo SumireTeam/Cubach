@@ -1,6 +1,4 @@
-﻿using OpenTK.Graphics.OpenGL4;
-
-namespace Cubach.View
+﻿namespace Cubach.View
 {
     public enum VertexAttributeType
     {
