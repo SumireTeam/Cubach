@@ -51,6 +51,7 @@
     <Compile Include="Model\Chunk.cs" />
     <Compile Include="Model\ChunkGenerator.cs" />
     <Compile Include="Model\World.cs" />
+    <Compile Include="PerlinNoise.cs" />
     <Compile Include="View\ChunkRenderer.cs" />
     <Compile Include="View\IMesh.cs" />
     <Compile Include="View\IMeshFactory.cs" />
