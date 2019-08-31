@@ -54,6 +54,7 @@
     <Compile Include="Model\Chunk.cs" />
     <Compile Include="Model\ChunkGenerator.cs" />
     <Compile Include="Model\World.cs" />
+    <Compile Include="Model\WorldGenerator.cs" />
     <Compile Include="NoiseProvider.cs" />
     <Compile Include="Quad.cs" />
     <Compile Include="RandomProvider.cs" />
@@ -82,6 +83,7 @@
     <Compile Include="View\OpenGL\VertexArray.cs" />
     <Compile Include="View\OpenGL\VertexBuffer.cs" />
     <Compile Include="View\TextRenderer.cs" />
+    <Compile Include="View\WorldRenderer.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

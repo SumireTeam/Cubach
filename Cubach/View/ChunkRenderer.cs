@@ -1,4 +1,5 @@
-﻿using Cubach.Model;
+﻿using System;
+using Cubach.Model;
 using OpenTK;
 using System.Collections.Generic;
 
@@ -10,7 +11,7 @@ namespace Cubach.View
 
         public ChunkRenderer(IMeshFactory meshFactory) => this.meshFactory = meshFactory;
 
-        public IMesh<VertexP3N3T2> CreateChunkMesh(Chunk chunk)
+        private VertexP3N3T2[] GetChunkVertexes(Chunk chunk)
         {
             var vertexes = new List<VertexP3N3T2>();
             for (int i = 0; i < Chunk.Length; ++i)
@@ -112,7 +113,19 @@ namespace Cubach.View
                 }
             }
 
-            return meshFactory.Create(vertexes.ToArray());
+            return vertexes.ToArray();
+        }
+
+        public IMesh<VertexP3N3T2> CreateChunkMesh(Chunk chunk)
+        {
+            var vertexes = GetChunkVertexes(chunk);
+            return meshFactory.Create(vertexes);
+        }
+
+        public void UpdateChunkMesh(Chunk chunk, IMesh<VertexP3N3T2> mesh)
+        {
+            var vertexes = GetChunkVertexes(chunk);
+            mesh.SetData(vertexes);
         }
     }
 }

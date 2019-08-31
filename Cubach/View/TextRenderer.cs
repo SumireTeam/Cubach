@@ -153,13 +153,11 @@ namespace Cubach.View
         {
             spriteBatch.Begin();
 
-            char[] chars = text.ToCharArray();
-            Vector2 pos = position - new Vector2(emSize, emSize);
+            var chars = text.ToCharArray();
+            var pos = position - new Vector2(emSize, emSize);
             var size = 4 * new Vector2(emSize, emSize);
 
-            for (int i = 0; i < chars.Length; ++i)
-            {
-                char ch = chars[i];
+            foreach (var ch in chars) {
                 if (ch == '\n')
                 {
                     pos.X = position.X - emSize;
@@ -176,6 +174,29 @@ namespace Cubach.View
             }
 
             spriteBatch.End();
+        }
+
+        public Vector2 MeasureString(string fontFamily, int emSize, string text)
+        {
+            var chars = text.ToCharArray();
+            var pos = Vector2.Zero;
+            var size = Vector2.Zero;
+
+            foreach (var ch in chars) {
+                if (ch == '\n') {
+                    pos.X = 0;
+                    pos.Y += 1.5f * emSize;
+                }
+                else {
+                    FontPage<TTexture> page = GetFontPage(fontFamily, emSize, ch);
+                    pos.X += page.CharSizes[ch].X;
+
+                    size.X = Math.Max(pos.X + page.CharSizes[ch].X, size.X);
+                    size.Y = Math.Max(pos.Y + page.CharSizes[ch].Y, size.Y);
+                }
+            }
+
+            return size;
         }
 
         public void Dispose()

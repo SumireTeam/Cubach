@@ -17,8 +17,10 @@ namespace Cubach.View.OpenGL
 
         public GLWindow(int width, int height, string title)
         {
-            var graphicsMode = new GraphicsMode(new ColorFormat(8, 8, 8, 8), depth: 24, stencil: 0, samples: 4, accum: ColorFormat.Empty, buffers: 3);
-            window = new GameWindow(width, height, graphicsMode, title, GameWindowFlags.Default, DisplayDevice.Default, 4, 0, GraphicsContextFlags.ForwardCompatible);
+            var graphicsMode = new GraphicsMode(new ColorFormat(8, 8, 8, 8), depth: 24, stencil: 0, samples: 4,
+                accum: ColorFormat.Empty, buffers: 3);
+            window = new GameWindow(width, height, graphicsMode, title, GameWindowFlags.Default, DisplayDevice.Default,
+                4, 0, GraphicsContextFlags.ForwardCompatible);
 
             window.Load += Window_Load;
             window.Resize += Window_Resize;
@@ -59,7 +61,7 @@ namespace Cubach.View.OpenGL
             GL.ClearColor(0.6f, 0.7f, 0.8f, 1);
             GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
 
-            RenderFrame(sender, new TimeEventArgs((float)e.Time));
+            RenderFrame(sender, new TimeEventArgs((float) e.Time));
 
             window.SwapBuffers();
             Thread.Sleep(1);
@@ -68,6 +70,8 @@ namespace Cubach.View.OpenGL
         private void Window_Unload(object sender, EventArgs e) => Unload(sender, e);
 
         public void Run() => window.Run();
+
+        public void MakeCurrent() => window.MakeCurrent();
         public void Dispose() => window.Dispose();
     }
 }

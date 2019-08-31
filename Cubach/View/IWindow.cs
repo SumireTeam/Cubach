@@ -20,5 +20,6 @@ namespace Cubach.View
         int Height { get; }
 
         void Run();
+        void MakeCurrent();
     }
 }

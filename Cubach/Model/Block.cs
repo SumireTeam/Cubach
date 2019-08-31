@@ -4,9 +4,9 @@ namespace Cubach.Model
 {
     public struct BlockType
     {
-        public string Name;
-        public bool Solid;
-        public bool Transparent;
+        public readonly string Name;
+        public readonly bool Solid;
+        public readonly bool Transparent;
 
         public BlockType(string name, bool solid = true, bool transparent = false)
         {
