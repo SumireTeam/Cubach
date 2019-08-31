@@ -1,4 +1,5 @@
 ﻿{
   "fontFamily": "Open Sans",
-  "fontSize": 16
+  "fontSize": 16,
+  "savePath": "./Saves"
 }

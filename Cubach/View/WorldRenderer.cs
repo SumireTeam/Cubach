@@ -7,6 +7,8 @@ namespace Cubach.View
 {
     public class WorldRenderer : IDisposable
     {
+        private const int MaxChunkUpdatesPerRender = 10;
+
         private readonly World world;
         private readonly ChunkRenderer chunkRenderer;
 
@@ -66,6 +68,8 @@ namespace Cubach.View
             var view = Matrix4.LookAt(position, target, Vector3.UnitZ);
             var projection = Matrix4.CreatePerspectiveFieldOfView(fovy, aspect, 0.1f, 1024);
 
+            var chunkUpdates = 0;
+
             for (int i = 0; i < World.Length; ++i) {
                 for (int j = 0; j < World.Width; ++j) {
                     for (int k = 0; k < World.Height; ++k) {
@@ -73,9 +77,10 @@ namespace Cubach.View
                         var mvp = model * view * projection;
                         shader.SetUniform("mvp", ref mvp);
 
-                        if (chunkRequiresUpdate[i, j, k]) {
+                        if (chunkUpdates < MaxChunkUpdatesPerRender && chunkRequiresUpdate[i, j, k]) {
                             UpdateChunk(i, j, k);
                             chunkRequiresUpdate[i, j, k] = false;
+                            chunkUpdates++;
                         }
 
                         chunkMeshes[i, j, k].Draw();

@@ -52,6 +52,7 @@
     <Compile Include="MathUtils.cs" />
     <Compile Include="Model\Block.cs" />
     <Compile Include="Model\Chunk.cs" />
+    <Compile Include="Model\ChunkEventArgs.cs" />
     <Compile Include="Model\ChunkGenerator.cs" />
     <Compile Include="Model\World.cs" />
     <Compile Include="Model\WorldGenerator.cs" />

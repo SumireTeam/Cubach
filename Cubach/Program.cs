@@ -45,6 +45,36 @@ namespace Cubach
             window.RenderFrame += Window_RenderFrame;
         }
 
+        private void LoadWorld(string path)
+        {
+            Console.WriteLine("Loading world...");
+
+            using (var stream = File.OpenRead(path)) {
+                world.Load(stream);
+            }
+        }
+
+        private void SaveWorld(string path)
+        {
+            Console.WriteLine("Saving world...");
+
+            using (var stream = File.OpenWrite(path)) {
+                world.Save(stream);
+            }
+        }
+
+        private void GenerateWorld()
+        {
+            Console.WriteLine("Generating world...");
+
+            var randomProvider = new RandomProvider(0);
+            var noiseProvider = new PerlinNoise(randomProvider);
+            var chunkGenerator = new ChunkGenerator(noiseProvider);
+            var worldGenerator = new WorldGenerator(world, chunkGenerator);
+            worldGenerator.ChunkGenerated += (s, ev) => { worldRenderer.RequestChunkUpdate(ev.X, ev.Y, ev.Z); };
+            worldGenerator.CreateChunks();
+        }
+
         private void Window_Load(object sender, EventArgs e)
         {
             vendor = $"Vendor: {GL.GetString(StringName.Vendor)}";
@@ -82,21 +112,21 @@ namespace Cubach
 
             var chunkRenderer = new ChunkRenderer(meshFactory);
             worldRenderer = new WorldRenderer(world, chunkRenderer);
+            world.ChunkUpdated += (s, ev) => { worldRenderer.RequestChunkUpdate(ev.X, ev.Y, ev.Z); };
 
-            Task.Run(() => {
-                var randomProvider = new RandomProvider(0);
-                var noiseProvider = new PerlinNoise(randomProvider);
-                var chunkGenerator = new ChunkGenerator(noiseProvider);
-                var worldGenerator = new WorldGenerator(world, chunkGenerator);
-                worldGenerator.ChunkGenerated += (s, ev) => {
-                    if (isDisposed) {
-                        return;
-                    }
-
-                    worldRenderer.RequestChunkUpdate(ev.X, ev.Y, ev.Z);
-                };
-                worldGenerator.CreateChunks();
-            });
+            const string worldFileName = "world.bin";
+            var worldFilePath = Path.Combine(config.SavePath, worldFileName);
+            if (File.Exists(worldFilePath)) {
+                // Load world from the file.
+                Task.Run(() => { LoadWorld(worldFilePath); });
+            }
+            else {
+                // Generate world and save it to the file.
+                Task.Run(() => {
+                    GenerateWorld();
+                    SaveWorld(worldFilePath);
+                });
+            }
         }
 
         private void Window_Resize(object sender, EventArgs e) => GL.Viewport(0, 0, window.Width, window.Height);
