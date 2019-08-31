@@ -4,6 +4,10 @@ namespace Cubach.Model
 {
     public class ChunkGenerator
     {
+        private readonly INoiseProvider noiseProvider;
+
+        public ChunkGenerator(INoiseProvider noiseProvider) => this.noiseProvider = noiseProvider;
+
         public Chunk Create(int x, int y, int z)
         {
             var chunk = new Chunk();
@@ -19,7 +23,7 @@ namespace Cubach.Model
                         for (int n = 0; n < 5; ++n)
                         {
                             float d = 1 << n;
-                            t += PerlinNoise.Noise3(v * d) / d;
+                            t += noiseProvider.Noise(v * d) / d;
                         }
 
                         int blockTypeID = t > 0 ? 1 : 0;

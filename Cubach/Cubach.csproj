@@ -47,11 +47,16 @@
     <Reference Include="System.Drawing" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Cube.cs" />
+    <Compile Include="Line.cs" />
+    <Compile Include="MathUtils.cs" />
     <Compile Include="Model\Block.cs" />
     <Compile Include="Model\Chunk.cs" />
     <Compile Include="Model\ChunkGenerator.cs" />
     <Compile Include="Model\World.cs" />
-    <Compile Include="PerlinNoise.cs" />
+    <Compile Include="NoiseProvider.cs" />
+    <Compile Include="Quad.cs" />
+    <Compile Include="RandomProvider.cs" />
     <Compile Include="View\ChunkRenderer.cs" />
     <Compile Include="View\IMesh.cs" />
     <Compile Include="View\IMeshFactory.cs" />

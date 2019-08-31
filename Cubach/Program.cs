@@ -49,10 +49,10 @@ namespace Cubach
 
         private void Window_Load(object sender, EventArgs e)
         {
-            vendor = string.Format("Vendor: {0}", GL.GetString(StringName.Vendor));
-            renderer = string.Format("Renderer: {0}", GL.GetString(StringName.Renderer));
-            version = string.Format("Version: {0}", GL.GetString(StringName.Version));
-            glsl = string.Format("GLSL version: {0}", GL.GetString(StringName.ShadingLanguageVersion));
+            vendor = $"Vendor: {GL.GetString(StringName.Vendor)}";
+            renderer = $"Renderer: {GL.GetString(StringName.Renderer)}";
+            version = $"Version: {GL.GetString(StringName.Version)}";
+            glsl = $"GLSL version: {GL.GetString(StringName.ShadingLanguageVersion)}";
 
             Console.WriteLine(vendor);
             Console.WriteLine(renderer);
@@ -69,7 +69,7 @@ namespace Cubach
             {
                 blockProgram = ShaderProgram.Create(vs, fs);
 
-                Matrix4 mvp = Matrix4.Identity;
+                var mvp = Matrix4.Identity;
                 blockProgram.SetUniform("mvp", ref mvp);
             }
 
@@ -78,13 +78,15 @@ namespace Cubach
             {
                 textProgram = ShaderProgram.Create(vs, fs);
 
-                Matrix4 mvp = Matrix4.Identity;
+                var mvp = Matrix4.Identity;
                 textProgram.SetUniform("mvp", ref mvp);
 
                 textProgram.SetUniform("colorTexture", 0);
             }
 
-            chunkGenerator = new ChunkGenerator();
+            var randomProvider = new RandomProvider(1);
+            var noiseProvider = new PerlinNoise(randomProvider);
+            chunkGenerator = new ChunkGenerator(noiseProvider);
             chunk = chunkGenerator.Create(0, 0, 0);
             chunkRenderer = new ChunkRenderer(meshFactory);
             chunkMesh = chunkRenderer.CreateChunkMesh(chunk);
@@ -104,14 +106,14 @@ namespace Cubach
             h += e.Time * MathHelper.DegreesToRadians(30);
             v += e.Time;
 
-            Vector3 position = new Vector3(15.5f, 15.5f, (float)(15.5 + 20 * Math.Sin(v))) + Matrix3.CreateRotationZ(h) * new Vector3(40.0f, 0.0f, 0.0f);
-            Vector3 target = new Vector3(15.5f, 15.5f, 15.5f);
+            var position = new Vector3(15.5f, 15.5f, (float)(15.5 + 20 * Math.Sin(v))) + Matrix3.CreateRotationZ(h) * new Vector3(40.0f, 0.0f, 0.0f);
+            var target = new Vector3(15.5f, 15.5f, 15.5f);
 
-            Matrix4 model = Matrix4.Identity;
-            Matrix4 view = Matrix4.LookAt(position, target, Vector3.UnitZ);
-            Matrix4 projection = Matrix4.CreatePerspectiveFieldOfView(fovy, aspect, 0.1f, 100);
+            var model = Matrix4.Identity;
+            var view = Matrix4.LookAt(position, target, Vector3.UnitZ);
+            var projection = Matrix4.CreatePerspectiveFieldOfView(fovy, aspect, 0.1f, 100);
 
-            Matrix4 mvp = model * view * projection;
+            var mvp = model * view * projection;
             blockProgram.SetUniform("mvp", ref mvp);
             chunkMesh.Draw();
 
