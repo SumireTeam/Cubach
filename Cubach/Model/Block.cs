@@ -6,12 +6,14 @@ namespace Cubach.Model
     public struct BlockType
     {
         public readonly string Name;
+        public readonly string Texture;
         public readonly bool Solid;
         public readonly bool Transparent;
 
-        public BlockType(string name, bool solid = true, bool transparent = false)
+        public BlockType(string name, string texture, bool solid = true, bool transparent = false)
         {
             Name = name;
+            Texture = texture;
             Solid = solid;
             Transparent = transparent;
         }
@@ -26,8 +28,10 @@ namespace Cubach.Model
         static Block()
         {
             Types = new[] {
-                new BlockType("Air", solid: false, transparent: true),
-                new BlockType("Solid"),
+                new BlockType("Air", "", solid: false, transparent: true),
+                new BlockType("Stone", "stone"),
+                new BlockType("Dirt", "dirt"),
+                new BlockType("Grass", "grass"),
             };
         }
 
@@ -35,6 +39,7 @@ namespace Cubach.Model
         public Block(int typeId) => TypeID = typeId;
         public BlockType Type => Types[TypeID];
         public string Name => Type.Name;
+        public string Texture => Type.Texture;
         public bool Solid => Type.Solid;
         public bool Transparent => Type.Transparent;
 

@@ -1,5 +1,4 @@
-﻿using System;
-using Cubach.Model;
+﻿using Cubach.Model;
 using OpenTK;
 using System.Collections.Generic;
 
@@ -8,106 +7,101 @@ namespace Cubach.View
     public class ChunkRenderer
     {
         private readonly IMeshFactory meshFactory;
+        private readonly ITextureAtlas blockTextureAtlas;
 
-        public ChunkRenderer(IMeshFactory meshFactory) => this.meshFactory = meshFactory;
+        public ChunkRenderer(IMeshFactory meshFactory, ITextureAtlas blockTextureAtlas)
+        {
+            this.meshFactory = meshFactory;
+            this.blockTextureAtlas = blockTextureAtlas;
+        }
 
         private VertexP3N3T2[] GetChunkVertexes(Chunk chunk)
         {
-            var vertexes = new List<VertexP3N3T2>();
-            for (int i = 0; i < Chunk.Length; ++i)
-            {
-                for (int j = 0; j < Chunk.Width; ++j)
-                {
-                    for (int k = 0; k < Chunk.Height; ++k)
-                    {
-                        Block block = chunk.Blocks[i, j, k];
-                        if (block.Transparent)
-                        {
+            // Non-empty natural generated chunks have an average of 50k vertexes.
+            // Use the next power of two for the initial capacity to avoid unnecessary allocations.
+            var vertexes = new List<VertexP3N3T2>(65536);
+            for (var i = 0; i < Chunk.Length; ++i) {
+                for (var j = 0; j < Chunk.Width; ++j) {
+                    for (var k = 0; k < Chunk.Height; ++k) {
+                        var block = chunk.Blocks[i, j, k];
+                        if (block.Transparent) {
                             continue;
                         }
 
-                        bool rearVisible = i == 0 || i > 0 && chunk.Blocks[i - 1, j, k].Transparent;
-                        if (rearVisible)
-                        {
-                            vertexes.AddRange(new VertexP3N3T2[] {
-                                new VertexP3N3T2(new Vector3(i,     j,     k), -Vector3.UnitX, new Vector2(0, 0)),
-                                new VertexP3N3T2(new Vector3(i,     j, 1 + k), -Vector3.UnitX, new Vector2(0, 1)),
-                                new VertexP3N3T2(new Vector3(i, 1 + j, 1 + k), -Vector3.UnitX, new Vector2(1, 1)),
+                        var textureName = block.Texture;
+                        var textureRegion = blockTextureAtlas.GetRegion(textureName);
+                        var uvZero = textureRegion.UVMin;
+                        var uvOne = textureRegion.UVMax;
+                        var uvUnitX = new Vector2(uvOne.X, uvZero.Y);
+                        var uvUnitY = new Vector2(uvZero.X, uvOne.Y);
 
-                                new VertexP3N3T2(new Vector3(i,     j,     k), -Vector3.UnitX, new Vector2(0, 0)),
-                                new VertexP3N3T2(new Vector3(i, 1 + j, 1 + k), -Vector3.UnitX, new Vector2(1, 1)),
-                                new VertexP3N3T2(new Vector3(i, 1 + j,     k), -Vector3.UnitX, new Vector2(1, 0)),
-                            });
+                        var rearVisible = i == 0 || i > 0 && chunk.Blocks[i - 1, j, k].Transparent;
+                        if (rearVisible) {
+                            var normal = -Vector3.UnitX;
+                            vertexes.Add(new VertexP3N3T2(new Vector3(i, j, k), normal, uvZero));
+                            vertexes.Add(new VertexP3N3T2(new Vector3(i, j, 1 + k), normal, uvUnitY));
+                            vertexes.Add(new VertexP3N3T2(new Vector3(i, 1 + j, 1 + k), normal, uvOne));
+                            vertexes.Add(new VertexP3N3T2(new Vector3(i, j, k), normal, uvZero));
+                            vertexes.Add(new VertexP3N3T2(new Vector3(i, 1 + j, 1 + k), normal, uvOne));
+                            vertexes.Add(new VertexP3N3T2(new Vector3(i, 1 + j, k), normal, uvUnitX));
                         }
 
-                        bool frontVisible = i == Chunk.Length - 1 || i < Chunk.Length - 1 && chunk.Blocks[i + 1, j, k].Transparent;
-                        if (frontVisible)
-                        {
-                            vertexes.AddRange(new VertexP3N3T2[] {
-                                new VertexP3N3T2(new Vector3(1 + i,     j,     k), Vector3.UnitX, new Vector2(0, 0)),
-                                new VertexP3N3T2(new Vector3(1 + i, 1 + j, 1 + k), Vector3.UnitX, new Vector2(1, 1)),
-                                new VertexP3N3T2(new Vector3(1 + i,     j, 1 + k), Vector3.UnitX, new Vector2(0, 1)),
-
-                                new VertexP3N3T2(new Vector3(1 + i,     j,     k), Vector3.UnitX, new Vector2(0, 0)),
-                                new VertexP3N3T2(new Vector3(1 + i, 1 + j,     k), Vector3.UnitX, new Vector2(1, 0)),
-                                new VertexP3N3T2(new Vector3(1 + i, 1 + j, 1 + k), Vector3.UnitX, new Vector2(1, 1)),
-                            });
+                        var frontVisible = i == Chunk.Length - 1
+                                           || i < Chunk.Length - 1 && chunk.Blocks[i + 1, j, k].Transparent;
+                        if (frontVisible) {
+                            var normal = Vector3.UnitX;
+                            vertexes.Add(new VertexP3N3T2(new Vector3(1 + i, j, k), normal, uvZero));
+                            vertexes.Add(new VertexP3N3T2(new Vector3(1 + i, 1 + j, 1 + k), normal, uvOne));
+                            vertexes.Add(new VertexP3N3T2(new Vector3(1 + i, j, 1 + k), normal, uvUnitY));
+                            vertexes.Add(new VertexP3N3T2(new Vector3(1 + i, j, k), normal, uvZero));
+                            vertexes.Add(new VertexP3N3T2(new Vector3(1 + i, 1 + j, k), normal, uvUnitX));
+                            vertexes.Add(new VertexP3N3T2(new Vector3(1 + i, 1 + j, 1 + k), normal, uvOne));
                         }
 
-                        bool leftVisible = j == 0 || j > 0 && chunk.Blocks[i, j - 1, k].Transparent;
-                        if (leftVisible)
-                        {
-                            vertexes.AddRange(new VertexP3N3T2[] {
-                                new VertexP3N3T2(new Vector3(    i, j,     k), -Vector3.UnitY, new Vector2(0, 0)),
-                                new VertexP3N3T2(new Vector3(1 + i, j, 1 + k), -Vector3.UnitY, new Vector2(1, 1)),
-                                new VertexP3N3T2(new Vector3(    i, j, 1 + k), -Vector3.UnitY, new Vector2(0, 1)),
-
-                                new VertexP3N3T2(new Vector3(    i, j,     k), -Vector3.UnitY, new Vector2(0, 0)),
-                                new VertexP3N3T2(new Vector3(1 + i, j,     k), -Vector3.UnitY, new Vector2(1, 0)),
-                                new VertexP3N3T2(new Vector3(1 + i, j, 1 + k), -Vector3.UnitY, new Vector2(1, 1)),
-                            });
+                        var leftVisible = j == 0 || j > 0 && chunk.Blocks[i, j - 1, k].Transparent;
+                        if (leftVisible) {
+                            var normal = -Vector3.UnitY;
+                            vertexes.Add(new VertexP3N3T2(new Vector3(i, j, k), normal, uvZero));
+                            vertexes.Add(new VertexP3N3T2(new Vector3(1 + i, j, 1 + k), normal, uvOne));
+                            vertexes.Add(new VertexP3N3T2(new Vector3(i, j, 1 + k), normal, uvUnitY));
+                            vertexes.Add(new VertexP3N3T2(new Vector3(i, j, k), normal, uvZero));
+                            vertexes.Add(new VertexP3N3T2(new Vector3(1 + i, j, k), normal, uvUnitX));
+                            vertexes.Add(new VertexP3N3T2(new Vector3(1 + i, j, 1 + k), normal, uvOne));
                         }
 
-                        bool rightVisible = j == Chunk.Width - 1 || j < Chunk.Width - 1 && chunk.Blocks[i, j + 1, k].Transparent;
-                        if (rightVisible)
-                        {
-                            vertexes.AddRange(new VertexP3N3T2[] {
-                                new VertexP3N3T2(new Vector3(    i, 1 + j,     k), Vector3.UnitY, new Vector2(0, 0)),
-                                new VertexP3N3T2(new Vector3(    i, 1 + j, 1 + k), Vector3.UnitY, new Vector2(0, 1)),
-                                new VertexP3N3T2(new Vector3(1 + i, 1 + j, 1 + k), Vector3.UnitY, new Vector2(1, 1)),
-
-                                new VertexP3N3T2(new Vector3(    i, 1 + j,     k), Vector3.UnitY, new Vector2(0, 0)),
-                                new VertexP3N3T2(new Vector3(1 + i, 1 + j, 1 + k), Vector3.UnitY, new Vector2(1, 1)),
-                                new VertexP3N3T2(new Vector3(1 + i, 1 + j,     k), Vector3.UnitY, new Vector2(1, 0)),
-                            });
+                        var rightVisible = j == Chunk.Width - 1
+                                           || j < Chunk.Width - 1 && chunk.Blocks[i, j + 1, k].Transparent;
+                        if (rightVisible) {
+                            var normal = Vector3.UnitY;
+                            vertexes.Add(new VertexP3N3T2(new Vector3(i, 1 + j, k), normal, uvZero));
+                            vertexes.Add(new VertexP3N3T2(new Vector3(i, 1 + j, 1 + k), normal, uvUnitY));
+                            vertexes.Add(new VertexP3N3T2(new Vector3(1 + i, 1 + j, 1 + k), normal, uvOne));
+                            vertexes.Add(new VertexP3N3T2(new Vector3(i, 1 + j, k), normal, uvZero));
+                            vertexes.Add(new VertexP3N3T2(new Vector3(1 + i, 1 + j, 1 + k), normal, uvOne));
+                            vertexes.Add(new VertexP3N3T2(new Vector3(1 + i, 1 + j, k), normal, uvUnitX));
                         }
 
-                        bool bottomVisible = k == 0 || k > 0 && chunk.Blocks[i, j, k - 1].Transparent;
-                        if (bottomVisible)
-                        {
-                            vertexes.AddRange(new VertexP3N3T2[] {
-                                new VertexP3N3T2(new Vector3(    i,     j, k), -Vector3.UnitZ, new Vector2(0, 0)),
-                                new VertexP3N3T2(new Vector3(    i, 1 + j, k), -Vector3.UnitZ, new Vector2(0, 1)),
-                                new VertexP3N3T2(new Vector3(1 + i, 1 + j, k), -Vector3.UnitZ, new Vector2(1, 1)),
-
-                                new VertexP3N3T2(new Vector3(    i,     j, k), -Vector3.UnitZ, new Vector2(0, 0)),
-                                new VertexP3N3T2(new Vector3(1 + i, 1 + j, k), -Vector3.UnitZ, new Vector2(1, 1)),
-                                new VertexP3N3T2(new Vector3(1 + i,     j, k), -Vector3.UnitZ, new Vector2(1, 0)),
-                            });
+                        var bottomVisible = k == 0 || k > 0 && chunk.Blocks[i, j, k - 1].Transparent;
+                        if (bottomVisible) {
+                            var normal = -Vector3.UnitZ;
+                            vertexes.Add(new VertexP3N3T2(new Vector3(i, j, k), normal, uvZero));
+                            vertexes.Add(new VertexP3N3T2(new Vector3(i, 1 + j, k), normal, uvUnitY));
+                            vertexes.Add(new VertexP3N3T2(new Vector3(1 + i, 1 + j, k), normal, uvOne));
+                            vertexes.Add(new VertexP3N3T2(new Vector3(i, j, k), normal, uvZero));
+                            vertexes.Add(new VertexP3N3T2(new Vector3(1 + i, 1 + j, k), normal, uvOne));
+                            vertexes.Add(new VertexP3N3T2(new Vector3(1 + i, j, k), normal, uvUnitX));
                         }
 
-                        bool topVisible = k == Chunk.Height - 1 || k < Chunk.Height - 1 && chunk.Blocks[i, j, k + 1].Transparent;
-                        if (topVisible)
-                        {
-                            vertexes.AddRange(new VertexP3N3T2[] {
-                                new VertexP3N3T2(new Vector3(    i,     j, 1 + k), Vector3.UnitZ, new Vector2(0, 0)),
-                                new VertexP3N3T2(new Vector3(1 + i, 1 + j, 1 + k), Vector3.UnitZ, new Vector2(1, 1)),
-                                new VertexP3N3T2(new Vector3(    i, 1 + j, 1 + k), Vector3.UnitZ, new Vector2(0, 1)),
-
-                                new VertexP3N3T2(new Vector3(    i,     j, 1 + k), Vector3.UnitZ, new Vector2(0, 0)),
-                                new VertexP3N3T2(new Vector3(1 + i,     j, 1 + k), Vector3.UnitZ, new Vector2(1, 0)),
-                                new VertexP3N3T2(new Vector3(1 + i, 1 + j, 1 + k), Vector3.UnitZ, new Vector2(1, 1)),
-                            });
+                        var topVisible = k == Chunk.Height - 1
+                                         || k < Chunk.Height - 1 && chunk.Blocks[i, j, k + 1].Transparent;
+                        if (topVisible) {
+                            var normal = Vector3.UnitZ;
+                            vertexes.Add(new VertexP3N3T2(new Vector3(i, j, 1 + k), normal, uvZero));
+                            vertexes.Add(new VertexP3N3T2(new Vector3(1 + i, 1 + j, 1 + k), normal, uvOne));
+                            vertexes.Add(new VertexP3N3T2(new Vector3(i, 1 + j, 1 + k), normal, uvUnitY));
+                            vertexes.Add(new VertexP3N3T2(new Vector3(i, j, 1 + k), normal, uvZero));
+                            vertexes.Add(new VertexP3N3T2(new Vector3(1 + i, j, 1 + k), normal, uvUnitX));
+                            vertexes.Add(new VertexP3N3T2(new Vector3(1 + i, 1 + j, 1 + k), normal, uvOne));
                         }
                     }
                 }

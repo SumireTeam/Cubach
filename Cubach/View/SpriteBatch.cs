@@ -10,7 +10,8 @@ namespace Cubach.View
         private readonly List<Sprite<TTexture>> sprites = new List<Sprite<TTexture>>();
         private readonly IMesh<VertexP2T2C4> mesh;
 
-        public SpriteBatch(IMeshFactory meshFactory) => mesh = meshFactory.Create(new VertexP2T2C4[0], MeshUsageHint.Dynamic);
+        public SpriteBatch(IMeshFactory meshFactory) =>
+            mesh = meshFactory.Create(new VertexP2T2C4[0], MeshUsageHint.Dynamic);
 
         public void Begin() => sprites.Clear();
 
@@ -18,15 +19,13 @@ namespace Cubach.View
 
         public void End()
         {
-            var groups = sprites.GroupBy(sprite => sprite.TextureRegion.Texture);
-            foreach (var group in groups)
-            {
+            var groups = sprites.GroupBy(sprite => sprite.Texture);
+            foreach (var group in groups) {
                 int spriteCount = group.Count();
                 int vertexCount = 6 * spriteCount;
                 VertexP2T2C4[] vertexes = new VertexP2T2C4[vertexCount];
                 int index = 0;
-                foreach (var sprite in group)
-                {
+                foreach (var sprite in group) {
                     Vector2 p1 = sprite.Position;
                     Vector2 p2 = new Vector2(sprite.Position.X, sprite.Position.Y + sprite.Size.Y);
                     Vector2 p3 = sprite.Position + sprite.Size;

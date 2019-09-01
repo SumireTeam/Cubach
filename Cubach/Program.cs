@@ -5,6 +5,7 @@ using OpenTK;
 using OpenTK.Graphics;
 using OpenTK.Graphics.OpenGL4;
 using System;
+using System.Drawing;
 using System.IO;
 using System.Threading.Tasks;
 
@@ -15,15 +16,18 @@ namespace Cubach
         private readonly Configuration config;
         private readonly IWindow window;
 
-        private IMeshFactory meshFactory;
-        private ITextureFactory<GLTexture> textureFactory;
+        private readonly IMeshFactory meshFactory = new GLMeshFactory();
+        private readonly ITextureFactory<GLTexture> textureFactory = new GLTextureFactory();
+
         private SpriteBatch<GLTexture> spriteBatch;
         private TextRenderer<GLTexture> textRenderer;
-        private readonly World world = new World();
-        private WorldRenderer worldRenderer;
 
+        private TextureAtlas<GLTexture> blockTextureAtlas;
         private ShaderProgram blockProgram;
         private ShaderProgram textProgram;
+
+        private readonly World world = new World();
+        private WorldRenderer worldRenderer;
 
         private string vendor = "";
         private string renderer = "";
@@ -43,6 +47,43 @@ namespace Cubach
             window.Load += Window_Load;
             window.Resize += Window_Resize;
             window.RenderFrame += Window_RenderFrame;
+        }
+
+        private void LoadTextures()
+        {
+            Console.WriteLine("Stitching textures...");
+            using (var builder = new TextureAtlasBuilder<GLTexture>(textureFactory)) {
+                var files = Directory.GetFiles("./Textures/Blocks");
+                foreach (var file in files) {
+                    var name = Path.GetFileNameWithoutExtension(file);
+                    builder.AddImage(name, new Bitmap(file));
+                }
+
+                blockTextureAtlas = builder.Build();
+            }
+        }
+
+        private void LoadShaders()
+        {
+            Console.WriteLine("Compiling shaders...");
+
+            using (var vs = Shader.Create(ShaderType.VertexShader, File.ReadAllText("./Shaders/cube.vert")))
+            using (var fs = Shader.Create(ShaderType.FragmentShader, File.ReadAllText("./Shaders/cube.frag"))) {
+                blockProgram = ShaderProgram.Create(vs, fs);
+
+                var mvp = Matrix4.Identity;
+                blockProgram.SetUniform("mvp", ref mvp);
+                blockProgram.SetUniform("colorTexture", 0);
+            }
+
+            using (var vs = Shader.Create(ShaderType.VertexShader, File.ReadAllText("./Shaders/text.vert")))
+            using (var fs = Shader.Create(ShaderType.FragmentShader, File.ReadAllText("./Shaders/text.frag"))) {
+                textProgram = ShaderProgram.Create(vs, fs);
+
+                var mvp = Matrix4.Identity;
+                textProgram.SetUniform("mvp", ref mvp);
+                textProgram.SetUniform("colorTexture", 0);
+            }
         }
 
         private void LoadWorld(string path)
@@ -87,30 +128,13 @@ namespace Cubach
             Console.WriteLine(version);
             Console.WriteLine(glsl);
 
-            meshFactory = new GLMeshFactory();
-            textureFactory = new GLTextureFactory();
             spriteBatch = new SpriteBatch<GLTexture>(meshFactory);
             textRenderer = new TextRenderer<GLTexture>(textureFactory, spriteBatch);
 
-            using (var vs = Shader.Create(ShaderType.VertexShader, File.ReadAllText("./Shaders/cube.vert")))
-            using (var fs = Shader.Create(ShaderType.FragmentShader, File.ReadAllText("./Shaders/cube.frag"))) {
-                blockProgram = ShaderProgram.Create(vs, fs);
+            LoadTextures();
+            LoadShaders();
 
-                var mvp = Matrix4.Identity;
-                blockProgram.SetUniform("mvp", ref mvp);
-            }
-
-            using (var vs = Shader.Create(ShaderType.VertexShader, File.ReadAllText("./Shaders/text.vert")))
-            using (var fs = Shader.Create(ShaderType.FragmentShader, File.ReadAllText("./Shaders/text.frag"))) {
-                textProgram = ShaderProgram.Create(vs, fs);
-
-                var mvp = Matrix4.Identity;
-                textProgram.SetUniform("mvp", ref mvp);
-
-                textProgram.SetUniform("colorTexture", 0);
-            }
-
-            var chunkRenderer = new ChunkRenderer(meshFactory);
+            var chunkRenderer = new ChunkRenderer(meshFactory, blockTextureAtlas);
             worldRenderer = new WorldRenderer(world, chunkRenderer);
             world.ChunkUpdated += (s, ev) => { worldRenderer.RequestChunkUpdate(ev.X, ev.Y, ev.Z); };
 
@@ -142,8 +166,16 @@ namespace Cubach
 
         private void Window_RenderFrame(object sender, TimeEventArgs e)
         {
+            GL.Enable(EnableCap.DepthTest);
+            GL.Disable(EnableCap.Blend);
+
+            blockTextureAtlas.Texture.Bind();
+
             float aspect = window.Width / (float) window.Height;
             worldRenderer.Draw(blockProgram, aspect, e.Time);
+
+            GL.Disable(EnableCap.DepthTest);
+            GL.Enable(EnableCap.Blend);
 
             textProgram.Use();
             var mvp = Matrix4.CreateOrthographicOffCenter(0, window.Width, window.Height, 0, -1, 1);
@@ -174,6 +206,7 @@ namespace Cubach
 
             textProgram?.Dispose();
             blockProgram?.Dispose();
+            blockTextureAtlas?.Dispose();
 
             window.Dispose();
         }

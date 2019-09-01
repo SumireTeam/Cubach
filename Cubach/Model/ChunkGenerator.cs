@@ -37,10 +37,21 @@ namespace Cubach.Model
 
                     for (int k = 0; k < Chunk.Height; ++k) {
                         var z = cz * Chunk.Height + k;
+
+                        // TODO: make block ID lookup by block name.
                         var blockTypeId = 0;
 
-                        if (z < height) {
-                            blockTypeId = 1;
+                        if (z <= (int) height) {
+                            // Make top layer of grass, 5 layers of dirt, and stone to the bottom.
+                            if (z == (int) height) {
+                                blockTypeId = 3;
+                            }
+                            else if (z > (int) height - 5) {
+                                blockTypeId = 2;
+                            }
+                            else {
+                                blockTypeId = 1;
+                            }
 
                             // Create caves.
                             float r = 0;

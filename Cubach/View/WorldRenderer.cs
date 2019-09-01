@@ -7,7 +7,7 @@ namespace Cubach.View
 {
     public class WorldRenderer : IDisposable
     {
-        private const int MaxChunkUpdatesPerRender = 10;
+        private const int MaxChunkUpdatesPerRender = 20;
 
         private readonly World world;
         private readonly ChunkRenderer chunkRenderer;
@@ -63,7 +63,7 @@ namespace Cubach.View
             );
 
             var position = target + Matrix3.CreateRotationZ(azimuth) *
-                           new Vector3(1.5f * Chunk.Length * World.Length, 0.0f, 32);
+                           new Vector3(0.25f * Chunk.Length * World.Length, 0.0f, 32);
 
             var view = Matrix4.LookAt(position, target, Vector3.UnitZ);
             var projection = Matrix4.CreatePerspectiveFieldOfView(fovy, aspect, 0.1f, 1024);

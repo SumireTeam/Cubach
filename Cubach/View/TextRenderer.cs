@@ -28,7 +28,8 @@ namespace Cubach.View
         private readonly ITextureFactory<TTexture> textureFactory;
         private readonly SpriteBatch<TTexture> spriteBatch;
 
-        private readonly Dictionary<string, FontPage<TTexture>> fontPages = new Dictionary<string, FontPage<TTexture>>();
+        private readonly Dictionary<string, FontPage<TTexture>>
+            fontPages = new Dictionary<string, FontPage<TTexture>>();
 
         private const int pageCols = 32;
         private const int pageRows = 32;
@@ -48,26 +49,20 @@ namespace Cubach.View
 
             var bitmap = new Bitmap(width, height, PixelFormat.Format32bppArgb);
 
-            using (var graphics = Graphics.FromImage(bitmap))
-            {
+            using (var graphics = Graphics.FromImage(bitmap)) {
                 Font font;
-                if (fontFamily == "Open Sans")
-                {
-                    using (var fontCollection = new PrivateFontCollection())
-                    {
+                if (fontFamily == "Open Sans") {
+                    using (var fontCollection = new PrivateFontCollection()) {
                         fontCollection.AddFontFile("./Fonts/OpenSans/OpenSans-Semibold.ttf");
                         font = new Font(fontCollection.Families[0], emSize, FontStyle.Bold);
                     }
                 }
-                else
-                {
+                else {
                     font = new Font(fontFamily, emSize, FontStyle.Bold);
                 }
 
-                try
-                {
-                    using (var brush = new SolidBrush(Color.White))
-                    {
+                try {
+                    using (var brush = new SolidBrush(Color.White)) {
                         graphics.CompositingMode = CompositingMode.SourceCopy;
                         graphics.CompositingQuality = CompositingQuality.HighQuality;
                         graphics.InterpolationMode = InterpolationMode.HighQualityBilinear;
@@ -79,14 +74,12 @@ namespace Cubach.View
 
                         SizeF s = graphics.MeasureString("||", font);
 
-                        for (int i = 0; i < pageCols; ++i)
-                        {
-                            for (int j = 0; j < pageRows; ++j)
-                            {
+                        for (int i = 0; i < pageCols; ++i) {
+                            for (int j = 0; j < pageRows; ++j) {
                                 int x = emSize + 4 * i * emSize;
                                 int y = emSize + 4 * j * emSize;
 
-                                char ch = (char)(i + pageCols * j + pageCols * pageRows * page);
+                                char ch = (char) (i + pageCols * j + pageCols * pageRows * page);
                                 string str = ch.ToString();
 
                                 graphics.DrawString(str, font, brush, x, y);
@@ -96,8 +89,7 @@ namespace Cubach.View
                         }
                     }
                 }
-                finally
-                {
+                finally {
                     font.Dispose();
                 }
             }
@@ -107,8 +99,7 @@ namespace Cubach.View
 
         public FontPage<TTexture> CreateFontPage(string fontFamily, int emSize, int page)
         {
-            using (var bitmap = CreateFontPageBitmap(fontFamily, emSize, page, out Dictionary<char, Vector2> sizes))
-            {
+            using (var bitmap = CreateFontPageBitmap(fontFamily, emSize, page, out Dictionary<char, Vector2> sizes)) {
                 var texture = textureFactory.Create(bitmap, true);
                 return new FontPage<TTexture>(texture, sizes);
             }
@@ -117,8 +108,7 @@ namespace Cubach.View
         public FontPage<TTexture> GetFontPage(string fontFamily, int emSize, int page)
         {
             string key = $"{fontFamily}:{emSize}:{page}";
-            if (fontPages.ContainsKey(key))
-            {
+            if (fontPages.ContainsKey(key)) {
                 return fontPages[key];
             }
 
@@ -133,7 +123,7 @@ namespace Cubach.View
             return GetFontPage(fontFamily, emSize, page);
         }
 
-        public TextureRegion<TTexture> GetCharTextureRegion(string fontFamily, int emSize, char ch)
+        public (TTexture, TextureRegion) GetCharTextureRegion(string fontFamily, int emSize, char ch)
         {
             var fontPage = GetFontPage(fontFamily, emSize, ch);
 
@@ -146,7 +136,8 @@ namespace Cubach.View
             float uMax = uMin + 1f / pageCols;
             float vMax = vMin + 1f / pageRows;
 
-            return new TextureRegion<TTexture>(fontPage.Texture, new Vector2(uMin, vMin), new Vector2(uMax, vMax));
+            var region = new TextureRegion(new Vector2(uMin, vMin), new Vector2(uMax, vMax));
+            return (fontPage.Texture, region);
         }
 
         public void DrawString(Vector2 position, string fontFamily, int emSize, string text, Color4 color)
@@ -158,16 +149,14 @@ namespace Cubach.View
             var size = 4 * new Vector2(emSize, emSize);
 
             foreach (var ch in chars) {
-                if (ch == '\n')
-                {
+                if (ch == '\n') {
                     pos.X = position.X - emSize;
                     pos.Y += 1.5f * emSize;
                 }
-                else
-                {
+                else {
                     FontPage<TTexture> page = GetFontPage(fontFamily, emSize, ch);
-                    TextureRegion<TTexture> region = GetCharTextureRegion(fontFamily, emSize, ch);
-                    var sprite = new Sprite<TTexture>(pos, size, region, color);
+                    (TTexture texture, TextureRegion region) = GetCharTextureRegion(fontFamily, emSize, ch);
+                    var sprite = new Sprite<TTexture>(pos, size, texture, region, color);
                     spriteBatch.Draw(sprite);
                     pos.X += page.CharSizes[ch].X;
                 }
@@ -201,8 +190,7 @@ namespace Cubach.View
 
         public void Dispose()
         {
-            foreach (var page in fontPages.Values)
-            {
+            foreach (var page in fontPages.Values) {
                 page.Dispose();
             }
 
