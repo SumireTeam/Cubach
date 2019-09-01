@@ -27,30 +27,34 @@ namespace Cubach.Model
 
         public Chunk Create(int cx, int cy, int cz)
         {
+            var airId = BlockType.GetIdByName("Air");
+            var stoneId = BlockType.GetIdByName("Stone");
+            var dirtId = BlockType.GetIdByName("Dirt");
+            var grassId = BlockType.GetIdByName("Grass");
+
             var chunk = new Chunk();
-            for (int i = 0; i < Chunk.Length; ++i) {
+            for (var i = 0; i < Chunk.Length; ++i) {
                 var x = cx * Chunk.Length + i;
 
-                for (int j = 0; j < Chunk.Width; ++j) {
+                for (var j = 0; j < Chunk.Width; ++j) {
                     var y = cy * Chunk.Width + j;
                     var height = GetHeight(x, y);
 
-                    for (int k = 0; k < Chunk.Height; ++k) {
+                    for (var k = 0; k < Chunk.Height; ++k) {
                         var z = cz * Chunk.Height + k;
 
-                        // TODO: make block ID lookup by block name.
-                        var blockTypeId = 0;
+                        var blockTypeId = airId;
 
                         if (z <= (int) height) {
                             // Make top layer of grass, 5 layers of dirt, and stone to the bottom.
                             if (z == (int) height) {
-                                blockTypeId = 3;
+                                blockTypeId = grassId;
                             }
                             else if (z > (int) height - 5) {
-                                blockTypeId = 2;
+                                blockTypeId = dirtId;
                             }
                             else {
-                                blockTypeId = 1;
+                                blockTypeId = stoneId;
                             }
 
                             // Create caves.
@@ -60,8 +64,8 @@ namespace Cubach.Model
                                 r += noiseProvider.Noise(new Vector3(x, y, z) * d / 100) / d;
                             }
 
-                            if (-0.05 < r && r < 0.05) {
-                                blockTypeId = 0;
+                            if (-0.025 < r && r < 0.025) {
+                                blockTypeId = airId;
                             }
                         }
 

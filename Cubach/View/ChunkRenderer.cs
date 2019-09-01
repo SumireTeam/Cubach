@@ -28,16 +28,15 @@ namespace Cubach.View
                             continue;
                         }
 
-                        var textureName = block.Texture;
-                        var textureRegion = blockTextureAtlas.GetRegion(textureName);
-                        var uvZero = textureRegion.UVMin;
-                        var uvOne = textureRegion.UVMax;
-                        var uvUnitX = new Vector2(uvOne.X, uvZero.Y);
-                        var uvUnitY = new Vector2(uvZero.X, uvOne.Y);
-
                         var rearVisible = i == 0 || i > 0 && chunk.Blocks[i - 1, j, k].Transparent;
                         if (rearVisible) {
                             var normal = -Vector3.UnitX;
+                            var textureName = block.Textures.Rear;
+                            var textureRegion = blockTextureAtlas.GetRegion(textureName);
+                            var uvZero = textureRegion.UVMin;
+                            var uvOne = textureRegion.UVMax;
+                            var uvUnitX = new Vector2(uvOne.X, uvZero.Y);
+                            var uvUnitY = new Vector2(uvZero.X, uvOne.Y);
                             vertexes.Add(new VertexP3N3T2(new Vector3(i, j, k), normal, uvZero));
                             vertexes.Add(new VertexP3N3T2(new Vector3(i, j, 1 + k), normal, uvUnitY));
                             vertexes.Add(new VertexP3N3T2(new Vector3(i, 1 + j, 1 + k), normal, uvOne));
@@ -50,6 +49,12 @@ namespace Cubach.View
                                            || i < Chunk.Length - 1 && chunk.Blocks[i + 1, j, k].Transparent;
                         if (frontVisible) {
                             var normal = Vector3.UnitX;
+                            var textureName = block.Textures.Front;
+                            var textureRegion = blockTextureAtlas.GetRegion(textureName);
+                            var uvZero = textureRegion.UVMin;
+                            var uvOne = textureRegion.UVMax;
+                            var uvUnitX = new Vector2(uvOne.X, uvZero.Y);
+                            var uvUnitY = new Vector2(uvZero.X, uvOne.Y);
                             vertexes.Add(new VertexP3N3T2(new Vector3(1 + i, j, k), normal, uvZero));
                             vertexes.Add(new VertexP3N3T2(new Vector3(1 + i, 1 + j, 1 + k), normal, uvOne));
                             vertexes.Add(new VertexP3N3T2(new Vector3(1 + i, j, 1 + k), normal, uvUnitY));
@@ -61,6 +66,12 @@ namespace Cubach.View
                         var leftVisible = j == 0 || j > 0 && chunk.Blocks[i, j - 1, k].Transparent;
                         if (leftVisible) {
                             var normal = -Vector3.UnitY;
+                            var textureName = block.Textures.Left;
+                            var textureRegion = blockTextureAtlas.GetRegion(textureName);
+                            var uvZero = textureRegion.UVMin;
+                            var uvOne = textureRegion.UVMax;
+                            var uvUnitX = new Vector2(uvOne.X, uvZero.Y);
+                            var uvUnitY = new Vector2(uvZero.X, uvOne.Y);
                             vertexes.Add(new VertexP3N3T2(new Vector3(i, j, k), normal, uvZero));
                             vertexes.Add(new VertexP3N3T2(new Vector3(1 + i, j, 1 + k), normal, uvOne));
                             vertexes.Add(new VertexP3N3T2(new Vector3(i, j, 1 + k), normal, uvUnitY));
@@ -73,6 +84,12 @@ namespace Cubach.View
                                            || j < Chunk.Width - 1 && chunk.Blocks[i, j + 1, k].Transparent;
                         if (rightVisible) {
                             var normal = Vector3.UnitY;
+                            var textureName = block.Textures.Right;
+                            var textureRegion = blockTextureAtlas.GetRegion(textureName);
+                            var uvZero = textureRegion.UVMin;
+                            var uvOne = textureRegion.UVMax;
+                            var uvUnitX = new Vector2(uvOne.X, uvZero.Y);
+                            var uvUnitY = new Vector2(uvZero.X, uvOne.Y);
                             vertexes.Add(new VertexP3N3T2(new Vector3(i, 1 + j, k), normal, uvZero));
                             vertexes.Add(new VertexP3N3T2(new Vector3(i, 1 + j, 1 + k), normal, uvUnitY));
                             vertexes.Add(new VertexP3N3T2(new Vector3(1 + i, 1 + j, 1 + k), normal, uvOne));
@@ -84,6 +101,12 @@ namespace Cubach.View
                         var bottomVisible = k == 0 || k > 0 && chunk.Blocks[i, j, k - 1].Transparent;
                         if (bottomVisible) {
                             var normal = -Vector3.UnitZ;
+                            var textureName = block.Textures.Bottom;
+                            var textureRegion = blockTextureAtlas.GetRegion(textureName);
+                            var uvZero = textureRegion.UVMin;
+                            var uvOne = textureRegion.UVMax;
+                            var uvUnitX = new Vector2(uvOne.X, uvZero.Y);
+                            var uvUnitY = new Vector2(uvZero.X, uvOne.Y);
                             vertexes.Add(new VertexP3N3T2(new Vector3(i, j, k), normal, uvZero));
                             vertexes.Add(new VertexP3N3T2(new Vector3(i, 1 + j, k), normal, uvUnitY));
                             vertexes.Add(new VertexP3N3T2(new Vector3(1 + i, 1 + j, k), normal, uvOne));
@@ -96,6 +119,12 @@ namespace Cubach.View
                                          || k < Chunk.Height - 1 && chunk.Blocks[i, j, k + 1].Transparent;
                         if (topVisible) {
                             var normal = Vector3.UnitZ;
+                            var textureName = block.Textures.Top;
+                            var textureRegion = blockTextureAtlas.GetRegion(textureName);
+                            var uvZero = textureRegion.UVMin;
+                            var uvOne = textureRegion.UVMax;
+                            var uvUnitX = new Vector2(uvOne.X, uvZero.Y);
+                            var uvUnitY = new Vector2(uvZero.X, uvOne.Y);
                             vertexes.Add(new VertexP3N3T2(new Vector3(i, j, 1 + k), normal, uvZero));
                             vertexes.Add(new VertexP3N3T2(new Vector3(1 + i, 1 + j, 1 + k), normal, uvOne));
                             vertexes.Add(new VertexP3N3T2(new Vector3(i, 1 + j, 1 + k), normal, uvUnitY));
