@@ -59,6 +59,7 @@
     <Compile Include="NoiseProvider.cs" />
     <Compile Include="Quad.cs" />
     <Compile Include="RandomProvider.cs" />
+    <Compile Include="View\Camera.cs" />
     <Compile Include="View\ChunkRenderer.cs" />
     <Compile Include="View\IMesh.cs" />
     <Compile Include="View\IMeshFactory.cs" />

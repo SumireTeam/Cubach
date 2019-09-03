@@ -6,8 +6,11 @@ using OpenTK.Graphics;
 using OpenTK.Graphics.OpenGL4;
 using System;
 using System.Drawing;
+using System.Globalization;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
+using OpenTK.Input;
 
 namespace Cubach
 {
@@ -27,6 +30,7 @@ namespace Cubach
         private ShaderProgram textProgram;
 
         private readonly World world = new World();
+        private readonly FirstPersonCamera camera;
         private WorldRenderer worldRenderer;
 
         private string vendor = "";
@@ -36,17 +40,22 @@ namespace Cubach
 
         private float avgFPS = 60;
 
-        private bool isDisposed = false;
-
         private Program()
         {
+            CultureInfo.CurrentCulture = CultureInfo.InvariantCulture;
+
             config = Newtonsoft.Json.JsonConvert.DeserializeObject<Configuration>(File.ReadAllText("./config.json"));
 
-            window = new GLWindow(width: 800, height: 600, title: "Cubach");
+            window = new GLWindow(width: 1024, height: 768, title: "Cubach");
 
             window.Load += Window_Load;
             window.Resize += Window_Resize;
             window.RenderFrame += Window_RenderFrame;
+
+            var position = new Vector3(World.Length * Chunk.Length / 2f,
+                World.Width * Chunk.Width / 2f,
+                World.Height * Chunk.Height / 2f + 10);
+            camera = new FirstPersonCamera(position);
         }
 
         private void LoadTextures()
@@ -135,7 +144,7 @@ namespace Cubach
             LoadShaders();
 
             var chunkRenderer = new ChunkRenderer(meshFactory, blockTextureAtlas);
-            worldRenderer = new WorldRenderer(world, chunkRenderer);
+            worldRenderer = new WorldRenderer(world, camera, chunkRenderer);
             world.ChunkUpdated += (s, ev) => { worldRenderer.RequestChunkUpdate(ev.X, ev.Y, ev.Z); };
 
             const string worldFileName = "world.bin";
@@ -153,7 +162,12 @@ namespace Cubach
             }
         }
 
-        private void Window_Resize(object sender, EventArgs e) => GL.Viewport(0, 0, window.Width, window.Height);
+        private void Window_Resize(object sender, EventArgs e)
+        {
+            GL.Viewport(0, 0, window.Width, window.Height);
+
+            camera.Aspect = window.Width / (float) window.Height;
+        }
 
         private void DrawString(Vector2 position, string text)
         {
@@ -166,6 +180,65 @@ namespace Cubach
 
         private void Window_RenderFrame(object sender, TimeEventArgs e)
         {
+            const float moveSpeed = 10f;
+
+            var keyboardState = Keyboard.GetState();
+            var moveDirection = Vector3.Zero;
+
+            var front = camera.Front;
+            var right = camera.Right;
+            var up = camera.Up;
+
+            if (keyboardState.IsKeyDown(Key.A)) {
+                moveDirection -= right;
+            }
+
+            if (keyboardState.IsKeyDown(Key.D)) {
+                moveDirection += right;
+            }
+
+            if (keyboardState.IsKeyDown(Key.W)) {
+                moveDirection += front;
+            }
+
+            if (keyboardState.IsKeyDown(Key.S)) {
+                moveDirection -= front;
+            }
+
+            if (keyboardState.IsKeyDown(Key.R)) {
+                moveDirection += Vector3.UnitZ;
+            }
+
+            if (keyboardState.IsKeyDown(Key.F)) {
+                moveDirection -= Vector3.UnitZ;
+            }
+
+            if (moveDirection.Length > 0) {
+                camera.Position += moveDirection.Normalized() * moveSpeed * e.Time;
+            }
+
+            const float rotationSpeed = 1f;
+
+            if (keyboardState.IsKeyDown(Key.Left)) {
+                camera.Orientation =
+                    Quaternion.FromAxisAngle(Vector3.UnitZ, rotationSpeed * e.Time) * camera.Orientation;
+            }
+
+            if (keyboardState.IsKeyDown(Key.Right)) {
+                camera.Orientation =
+                    Quaternion.FromAxisAngle(Vector3.UnitZ, -rotationSpeed * e.Time) * camera.Orientation;
+            }
+
+            if (keyboardState.IsKeyDown(Key.Up) && front.Z < 0.95f) {
+                camera.Orientation *= Quaternion.FromAxisAngle(Vector3.UnitX, rotationSpeed * e.Time);
+            }
+
+            if (keyboardState.IsKeyDown(Key.Down) && front.Z > -0.95f) {
+                camera.Orientation *= Quaternion.FromAxisAngle(Vector3.UnitX, -rotationSpeed * e.Time);
+            }
+
+            camera.Orientation.Normalize();
+
             GL.Enable(EnableCap.DepthTest);
             GL.Disable(EnableCap.Blend);
 
@@ -188,6 +261,12 @@ namespace Cubach
             var fpsStr = $"FPS {(int) Math.Floor(avgFPS)}";
             DrawString(new Vector2(8, 8), fpsStr);
 
+            var position = camera.Position;
+            var direction = camera.Front;
+            var posStr = $"Pos {position.X:0.00}, {position.Y:0.00}, {position.Z:0.00}\n"
+                         + $"Dir {direction.X:0.00}, {direction.Y:0.00}, {direction.Z:0.00}";
+            DrawString(new Vector2(8, 8 + 1.5f * 16), posStr);
+
             var info = $"{vendor}\n{renderer}\n{version}\n{glsl}";
             var infoSize = textRenderer.MeasureString(config.FontFamily, config.FontSize, info);
             DrawString(new Vector2(window.Width - infoSize.X - 8, 8), info);
@@ -197,8 +276,6 @@ namespace Cubach
 
         public void Dispose()
         {
-            isDisposed = true;
-
             textRenderer?.Dispose();
             spriteBatch?.Dispose();
 
