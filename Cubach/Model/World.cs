@@ -1,14 +1,8 @@
 ﻿using System;
-using System.IO;
-using System.Text.RegularExpressions;
+using OpenTK;
 
 namespace Cubach.Model
 {
-    public enum DataType : byte
-    {
-        ByteArray = 1,
-    }
-
     public class World
     {
         public const int Length = 8;
@@ -16,69 +10,76 @@ namespace Cubach.Model
         public const int Height = 8;
 
         public readonly Chunk[,,] Chunks = new Chunk[Length, Width, Height];
+        public readonly Player Player;
 
         public event EventHandler<ChunkEventArgs> ChunkUpdated = (s, e) => { };
 
         public World()
         {
-            for (int i = 0; i < Length; ++i) {
-                for (int j = 0; j < Width; ++j) {
-                    for (int k = 0; k < Height; ++k) {
-                        Chunks[i, j, k] = new Chunk();
+            for (var i = 0; i < Length; ++i) {
+                for (var j = 0; j < Width; ++j) {
+                    for (var k = 0; k < Height; ++k) {
+                        Chunks[i, j, k] = new Chunk(i, j, k);
                     }
                 }
             }
+
+            var position = new Vector3(
+                Chunk.Length * Length / 2f,
+                Chunk.Width * Width / 2f,
+                Chunk.Height * Height * 3 / 4f
+            );
+            Player = new Player(position);
         }
 
-        public void Save(Stream stream)
+        /// <summary>
+        /// Returns a chunk at the specified indexes, or null if it is out of bounds.
+        /// </summary>
+        public Chunk GetChunk(int i, int j, int k)
         {
-            using (var writer = new BinaryWriter(stream)) {
-                for (int x = 0; x < Length; ++x) {
-                    for (int y = 0; y < Width; ++y) {
-                        for (int z = 0; z < Height; ++z) {
-                            var key = $"chunk:{x}:{y}:{z}:blocks";
-                            writer.Write(key);
-
-                            var chunk = Chunks[x, y, z];
-                            var value = chunk.GetBytes();
-                            writer.Write((byte) DataType.ByteArray);
-                            writer.Write(value.Length);
-                            writer.Write(value);
-                        }
-                    }
-                }
+            if (i < 0 || j < 0 || k < 0 || i >= Length || j >= Width || k >= Height) {
+                return null;
             }
+
+            return Chunks[i, j, k];
         }
 
-        public void Load(Stream stream)
+        /// <summary>
+        /// Returns a chunk at the specified position, or null if it is out of bounds.
+        /// </summary>
+        public Chunk GetChunkAt(Vector3 position)
         {
-            using (var reader = new BinaryReader(stream)) {
-                var length = stream.Length;
-                while (stream.Position < length) {
-                    var key = reader.ReadString();
-                    var type = (DataType) reader.ReadByte();
-                    switch (type) {
-                        case DataType.ByteArray:
-                            var dataLength = reader.ReadInt32();
-                            var data = reader.ReadBytes(dataLength);
+            var i = (int) Math.Floor(position.X / Chunk.Length);
+            var j = (int) Math.Floor(position.Y / Chunk.Width);
+            var k = (int) Math.Floor(position.Z / Chunk.Height);
 
-                            var blocksMatch = Regex.Match(key, "^chunk:(\\d+):(\\d+):(\\d+):blocks$");
-                            if (blocksMatch.Success) {
-                                var x = int.Parse(blocksMatch.Groups[1].Value);
-                                var y = int.Parse(blocksMatch.Groups[2].Value);
-                                var z = int.Parse(blocksMatch.Groups[3].Value);
-                                var chunk = Chunk.Create(data);
-                                Chunks[x, y, z] = chunk;
-                                ChunkUpdated(this, new ChunkEventArgs(x, y, z, chunk));
-                            }
+            return GetChunk(i, j, k);
+        }
 
-                            break;
-
-                        default:
-                            throw new NotImplementedException($"Unknown data type: {(byte) type}");
-                    }
-                }
+        public Block? GetBlockAt(Vector3 position)
+        {
+            var chunk = GetChunkAt(position);
+            if (chunk == null) {
+                return null;
             }
+
+            var i = (int) Math.Floor(position.X) % Chunk.Length;
+            var j = (int) Math.Floor(position.Y) % Chunk.Width;
+            var k = (int) Math.Floor(position.Z) % Chunk.Height;
+
+            return chunk.GetBlock(i, j, k);
+        }
+
+        public void SetChunk(int i, int j, int k, Chunk chunk)
+        {
+            Chunks[i, j, k] = chunk;
+            ChunkUpdated(this, new ChunkEventArgs(chunk));
+        }
+
+        public void Update(float elapsedTime)
+        {
+            Player.Position += Player.Speed * elapsedTime;
+            //Player.Speed += Vector3.UnitZ * -9.81f * elapsedTime;
         }
     }
 }

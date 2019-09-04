@@ -32,7 +32,7 @@ namespace Cubach.Model
             var dirtId = BlockType.GetIdByName("Dirt");
             var grassId = BlockType.GetIdByName("Grass");
 
-            var chunk = new Chunk();
+            var chunk = new Chunk(cx, cy, cz);
             for (var i = 0; i < Chunk.Length; ++i) {
                 var x = cx * Chunk.Length + i;
 
@@ -59,12 +59,12 @@ namespace Cubach.Model
 
                             // Create caves.
                             float r = 0;
-                            for (int n = 0; n < 5; ++n) {
+                            for (int n = 0; n < 4; ++n) {
                                 float d = 1 << n;
                                 r += noiseProvider.Noise(new Vector3(x, y, z) * d / 100) / d;
                             }
 
-                            if (-0.025 < r && r < 0.025) {
+                            if (-0.015 < r && r < 0.015) {
                                 blockTypeId = airId;
                             }
                         }

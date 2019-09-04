@@ -8,7 +8,7 @@ namespace Cubach.View.OpenGL
         private readonly VertexArray VAO;
         private readonly VertexBuffer VBO;
 
-        private int vertexCount = 0;
+        public int VertexCount { get; private set; }
 
         public GLMesh()
         {
@@ -16,25 +16,23 @@ namespace Cubach.View.OpenGL
             VBO = new VertexBuffer();
         }
 
-        private static readonly Dictionary<MeshUsageHint, BufferUsageHint> usageMap = new Dictionary<MeshUsageHint, BufferUsageHint>
-        {
-            [MeshUsageHint.Static] = BufferUsageHint.StaticDraw,
-            [MeshUsageHint.Dynamic] = BufferUsageHint.DynamicDraw,
-            [MeshUsageHint.Stream] = BufferUsageHint.StreamDraw,
-        };
+        private static readonly Dictionary<MeshUsageHint, BufferUsageHint> usageMap =
+            new Dictionary<MeshUsageHint, BufferUsageHint> {
+                [MeshUsageHint.Static] = BufferUsageHint.StaticDraw,
+                [MeshUsageHint.Dynamic] = BufferUsageHint.DynamicDraw,
+                [MeshUsageHint.Stream] = BufferUsageHint.StreamDraw,
+            };
 
         public void SetData(TVertex[] data, MeshUsageHint usage = MeshUsageHint.Static)
         {
-            vertexCount = data.Length;
+            VertexCount = data.Length;
 
-            if (vertexCount == 0)
-            {
+            if (VertexCount == 0) {
                 return;
             }
 
             VertexAttribute[] attributes = data[0].GetVertexAttributes();
-            for (int i = 0; i < attributes.Length; ++i)
-            {
+            for (int i = 0; i < attributes.Length; ++i) {
                 VAO.SetVertexAttribute(i, attributes[i], VBO);
             }
 
@@ -42,20 +40,19 @@ namespace Cubach.View.OpenGL
             VBO.SetData(data, glUsage);
         }
 
-        private static readonly Dictionary<DrawPrimitiveType, PrimitiveType> drawTypeMap = new Dictionary<DrawPrimitiveType, PrimitiveType>
-        {
-            [DrawPrimitiveType.Triangles] = PrimitiveType.Triangles,
-        };
+        private static readonly Dictionary<DrawPrimitiveType, PrimitiveType> drawTypeMap =
+            new Dictionary<DrawPrimitiveType, PrimitiveType> {
+                [DrawPrimitiveType.Triangles] = PrimitiveType.Triangles,
+            };
 
         public void Draw(DrawPrimitiveType type = DrawPrimitiveType.Triangles)
         {
-            if (vertexCount == 0)
-            {
+            if (VertexCount == 0) {
                 return;
             }
 
             PrimitiveType glType = drawTypeMap[type];
-            VAO.Draw(glType, 0, vertexCount);
+            VAO.Draw(glType, 0, VertexCount);
         }
 
         public void Dispose()

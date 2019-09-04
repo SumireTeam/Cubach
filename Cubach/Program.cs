@@ -8,7 +8,7 @@ using System;
 using System.Drawing;
 using System.Globalization;
 using System.IO;
-using System.Threading;
+using System.IO.Compression;
 using System.Threading.Tasks;
 using OpenTK.Input;
 
@@ -52,15 +52,13 @@ namespace Cubach
             window.Resize += Window_Resize;
             window.RenderFrame += Window_RenderFrame;
 
-            var position = new Vector3(World.Length * Chunk.Length / 2f,
-                World.Width * Chunk.Width / 2f,
-                World.Height * Chunk.Height / 2f + 10);
-            camera = new FirstPersonCamera(position);
+            camera = new FirstPersonCamera();
         }
 
         private void LoadTextures()
         {
             Console.WriteLine("Stitching textures...");
+
             using (var builder = new TextureAtlasBuilder<GLTexture>(textureFactory)) {
                 var files = Directory.GetFiles("./Textures/Blocks");
                 foreach (var file in files) {
@@ -99,8 +97,16 @@ namespace Cubach
         {
             Console.WriteLine("Loading world...");
 
-            using (var stream = File.OpenRead(path)) {
-                world.Load(stream);
+            using (var stream = new MemoryStream()) {
+                using (var fileStream = File.OpenRead(path))
+                using (var gzStream = new GZipStream(fileStream, CompressionMode.Decompress)) {
+                    gzStream.CopyTo(stream);
+                }
+
+                stream.Seek(0, SeekOrigin.Begin);
+
+                var serializer = new WorldSerializer();
+                serializer.Load(stream, world);
             }
         }
 
@@ -108,8 +114,10 @@ namespace Cubach
         {
             Console.WriteLine("Saving world...");
 
-            using (var stream = File.OpenWrite(path)) {
-                world.Save(stream);
+            using (var fileStream = File.OpenWrite(path))
+            using (var gzStream = new GZipStream(fileStream, CompressionMode.Compress)) {
+                var serializer = new WorldSerializer();
+                serializer.Save(gzStream, world);
             }
         }
 
@@ -121,7 +129,33 @@ namespace Cubach
             var noiseProvider = new PerlinNoise(randomProvider);
             var chunkGenerator = new ChunkGenerator(noiseProvider);
             var worldGenerator = new WorldGenerator(world, chunkGenerator);
-            worldGenerator.ChunkGenerated += (s, ev) => { worldRenderer.RequestChunkUpdate(ev.X, ev.Y, ev.Z); };
+            worldGenerator.ChunkGenerated += (s, ev) => {
+                worldRenderer.RequestChunkUpdate(ev.Chunk.X, ev.Chunk.Y, ev.Chunk.Z);
+
+                if (ev.Chunk.X > 0) {
+                    worldRenderer.RequestChunkUpdate(ev.Chunk.X - 1, ev.Chunk.Y, ev.Chunk.Z);
+                }
+
+                if (ev.Chunk.X < World.Length - 1) {
+                    worldRenderer.RequestChunkUpdate(ev.Chunk.X + 1, ev.Chunk.Y, ev.Chunk.Z);
+                }
+
+                if (ev.Chunk.Y > 0) {
+                    worldRenderer.RequestChunkUpdate(ev.Chunk.X, ev.Chunk.Y - 1, ev.Chunk.Z);
+                }
+
+                if (ev.Chunk.Y < World.Width - 1) {
+                    worldRenderer.RequestChunkUpdate(ev.Chunk.X, ev.Chunk.Y + 1, ev.Chunk.Z);
+                }
+
+                if (ev.Chunk.Z > 0) {
+                    worldRenderer.RequestChunkUpdate(ev.Chunk.X, ev.Chunk.Y, ev.Chunk.Z - 1);
+                }
+
+                if (ev.Chunk.Z < World.Height - 1) {
+                    worldRenderer.RequestChunkUpdate(ev.Chunk.X, ev.Chunk.Y, ev.Chunk.Z + 1);
+                }
+            };
             worldGenerator.CreateChunks();
         }
 
@@ -144,8 +178,8 @@ namespace Cubach
             LoadShaders();
 
             var chunkRenderer = new ChunkRenderer(meshFactory, blockTextureAtlas);
-            worldRenderer = new WorldRenderer(world, camera, chunkRenderer);
-            world.ChunkUpdated += (s, ev) => { worldRenderer.RequestChunkUpdate(ev.X, ev.Y, ev.Z); };
+            worldRenderer = new WorldRenderer(config, world, camera, chunkRenderer);
+            world.ChunkUpdated += (s, ev) => { worldRenderer.RequestChunkUpdate(ev.Chunk.X, ev.Chunk.Y, ev.Chunk.Z); };
 
             const string worldFileName = "world.bin";
             var worldFilePath = Path.Combine(config.SavePath, worldFileName);
@@ -178,16 +212,17 @@ namespace Cubach
             textRenderer.DrawString(position, config.FontFamily, config.FontSize, text, textColor);
         }
 
-        private void Window_RenderFrame(object sender, TimeEventArgs e)
+        private void HandleInput(float elapsedTime)
         {
             const float moveSpeed = 10f;
-
-            var keyboardState = Keyboard.GetState();
-            var moveDirection = Vector3.Zero;
+            const float rotationSpeed = 1f;
 
             var front = camera.Front;
             var right = camera.Right;
             var up = camera.Up;
+
+            var keyboardState = Keyboard.GetState();
+            var moveDirection = Vector3.Zero;
 
             if (keyboardState.IsKeyDown(Key.A)) {
                 moveDirection -= right;
@@ -214,30 +249,51 @@ namespace Cubach
             }
 
             if (moveDirection.Length > 0) {
-                camera.Position += moveDirection.Normalized() * moveSpeed * e.Time;
+                world.Player.Position += moveDirection.Normalized() * moveSpeed * elapsedTime;
             }
 
-            const float rotationSpeed = 1f;
-
             if (keyboardState.IsKeyDown(Key.Left)) {
-                camera.Orientation =
-                    Quaternion.FromAxisAngle(Vector3.UnitZ, rotationSpeed * e.Time) * camera.Orientation;
+                world.Player.Orientation =
+                    Quaternion.FromAxisAngle(Vector3.UnitZ, rotationSpeed * elapsedTime) * world.Player.Orientation;
             }
 
             if (keyboardState.IsKeyDown(Key.Right)) {
-                camera.Orientation =
-                    Quaternion.FromAxisAngle(Vector3.UnitZ, -rotationSpeed * e.Time) * camera.Orientation;
+                world.Player.Orientation =
+                    Quaternion.FromAxisAngle(Vector3.UnitZ, -rotationSpeed * elapsedTime) *
+                    world.Player.Orientation;
             }
 
-            if (keyboardState.IsKeyDown(Key.Up) && front.Z < 0.95f) {
-                camera.Orientation *= Quaternion.FromAxisAngle(Vector3.UnitX, rotationSpeed * e.Time);
+            if (keyboardState.IsKeyDown(Key.Up)) {
+                var newOrientation =
+                    world.Player.Orientation * Quaternion.FromAxisAngle(Vector3.UnitX, rotationSpeed * elapsedTime);
+                var newFront = newOrientation * -Vector3.UnitZ;
+                // Prevents camera flipping when looking up.
+                if (Math.Sign(newFront.X) == Math.Sign(front.X) && Math.Sign(newFront.Y) == Math.Sign(front.Y)) {
+                    world.Player.Orientation = newOrientation;
+                }
             }
 
-            if (keyboardState.IsKeyDown(Key.Down) && front.Z > -0.95f) {
-                camera.Orientation *= Quaternion.FromAxisAngle(Vector3.UnitX, -rotationSpeed * e.Time);
+            if (keyboardState.IsKeyDown(Key.Down)) {
+                var newOrientation =
+                    world.Player.Orientation *
+                    Quaternion.FromAxisAngle(Vector3.UnitX, -rotationSpeed * elapsedTime);
+                var newFront = newOrientation * -Vector3.UnitZ;
+                // Prevents camera flipping when looking down.
+                if (Math.Sign(newFront.X) == Math.Sign(front.X) && Math.Sign(newFront.Y) == Math.Sign(front.Y)) {
+                    world.Player.Orientation = newOrientation;
+                }
             }
 
-            camera.Orientation.Normalize();
+            world.Player.Orientation.Normalize();
+
+            camera.Position = world.Player.Position;
+            camera.Orientation = world.Player.Orientation;
+        }
+
+        private void Window_RenderFrame(object sender, TimeEventArgs e)
+        {
+            HandleInput(e.Time);
+            world.Update(e.Time);
 
             GL.Enable(EnableCap.DepthTest);
             GL.Disable(EnableCap.Blend);

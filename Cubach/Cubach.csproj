@@ -47,6 +47,7 @@
     <Reference Include="System.Drawing" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="AABB.cs" />
     <Compile Include="Cube.cs" />
     <Compile Include="Line.cs" />
     <Compile Include="MathUtils.cs" />
@@ -54,8 +55,10 @@
     <Compile Include="Model\Chunk.cs" />
     <Compile Include="Model\ChunkEventArgs.cs" />
     <Compile Include="Model\ChunkGenerator.cs" />
+    <Compile Include="Model\Player.cs" />
     <Compile Include="Model\World.cs" />
     <Compile Include="Model\WorldGenerator.cs" />
+    <Compile Include="Model\WorldSerializer.cs" />
     <Compile Include="NoiseProvider.cs" />
     <Compile Include="Quad.cs" />
     <Compile Include="RandomProvider.cs" />

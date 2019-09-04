@@ -33,8 +33,8 @@ namespace Cubach.View
             Orientation = orientation;
         }
 
-        public FirstPersonCamera(Vector3 position) : this(position,
-            Quaternion.FromEulerAngles(MathHelper.PiOver2, 0, 0)) { }
+        public FirstPersonCamera(Vector3 position)
+            : this(position, Quaternion.FromEulerAngles(MathHelper.PiOver2, 0, 0)) { }
 
         public FirstPersonCamera() : this(Vector3.Zero) { }
 
@@ -45,8 +45,10 @@ namespace Cubach.View
         public Vector3 Right => Vector3.Cross(Front, Vector3.UnitZ);
         public Vector3 Up => Vector3.Cross(Right, Front);
 
-        public Matrix4 Projection => Matrix4.CreatePerspectiveFieldOfView(FieldOfViewY, Aspect, NearPlane, FarPlane);
+        public Matrix4 Projection =>
+            Matrix4.CreatePerspectiveFieldOfView(FieldOfViewY, Aspect, NearPlane, FarPlane);
 
-        public Matrix4 View => Matrix4.CreateTranslation(-Position) * Matrix4.CreateFromQuaternion(Orientation.Inverted());
+        public Matrix4 View =>
+            Matrix4.CreateTranslation(-Position) * Matrix4.CreateFromQuaternion(Orientation.Inverted());
     }
 }

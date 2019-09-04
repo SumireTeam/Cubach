@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using Cubach.Model;
 using Cubach.View.OpenGL;
 using OpenTK;
@@ -7,8 +9,9 @@ namespace Cubach.View
 {
     public class WorldRenderer : IDisposable
     {
-        private const int MaxChunkUpdatesPerRender = 20;
+        private const int MaxChunkUpdatesPerRender = 4;
 
+        private readonly Configuration config;
         private readonly World world;
         private readonly ICamera camera;
         private readonly ChunkRenderer chunkRenderer;
@@ -18,8 +21,9 @@ namespace Cubach.View
         private readonly IMesh<VertexP3N3T2>[,,] chunkMeshes =
             new IMesh<VertexP3N3T2>[World.Length, World.Width, World.Height];
 
-        public WorldRenderer(World world, ICamera camera, ChunkRenderer chunkRenderer)
+        public WorldRenderer(Configuration config, World world, ICamera camera, ChunkRenderer chunkRenderer)
         {
+            this.config = config;
             this.world = world;
             this.camera = camera;
             this.chunkRenderer = chunkRenderer;
@@ -28,7 +32,7 @@ namespace Cubach.View
                 for (int j = 0; j < World.Width; ++j) {
                     for (int k = 0; k < World.Height; ++k) {
                         var chunk = world.Chunks[i, j, k];
-                        chunkMeshes[i, j, k] = chunkRenderer.CreateChunkMesh(chunk);
+                        chunkMeshes[i, j, k] = chunkRenderer.CreateChunkMesh(world, chunk);
                     }
                 }
             }
@@ -43,7 +47,7 @@ namespace Cubach.View
         {
             var chunk = world.Chunks[x, y, z];
             var mesh = chunkMeshes[x, y, z];
-            chunkRenderer.UpdateChunkMesh(chunk, mesh);
+            chunkRenderer.UpdateChunkMesh(world, chunk, mesh);
         }
 
         public void Draw(ShaderProgram shader, float aspect, float time)
@@ -55,35 +59,61 @@ namespace Cubach.View
 
             var view = camera.View;
             var projection = camera.Projection;
+            var vp = view * projection;
 
+            // Sort chunks by distance, so near chunks are rendered first,
+            // and rendering of the far chunks can be skipped with the depth test.
+            var chunks = new SortedList<float, List<Chunk>>();
             for (var i = 0; i < World.Length; ++i) {
                 for (var j = 0; j < World.Width; ++j) {
                     for (var k = 0; k < World.Height; ++k) {
-                        var chunkCenter = new Vector3(Chunk.Length * (i + 0.5f),
-                            Chunk.Width * (j + 0.5f),
-                            Chunk.Height * (k + 0.5f));
-                        var playerToChunkDist = MathUtils.TaxicabDistance(chunkCenter, camera.Position);
-                        if (playerToChunkDist > (Chunk.Length + Chunk.Width + Chunk.Height) / 2f) {
-                            // If the chunk is behind the player, skip it.
-                            var playerToChunkDir = (chunkCenter - camera.Position).Normalized();
-                            if (Vector3.Dot(playerDir, playerToChunkDir) < 0) {
+                        // Skip empty chunks that not requires update.
+                        var chunkMesh = chunkMeshes[i, j, k];
+                        var requiresUpdate = chunkRequiresUpdate[i, j, k];
+                        if (chunkMesh.VertexCount == 0 && !requiresUpdate) {
+                            continue;
+                        }
+
+                        var chunk = world.GetChunk(i, j, k);
+                        var chunkCenter = chunk.Center;
+                        var distance = MathUtils.TaxicabDistance(chunkCenter, camera.Position);
+
+                        // Skip chunk if it is too far.
+                        if (distance > config.RenderDistance) {
+                            continue;
+                        }
+
+                        // Skip chunk if it is not current and behind the player.
+                        if (distance > (Chunk.Length + Chunk.Width + Chunk.Height) / 2f) {
+                            var direction = (chunkCenter - camera.Position).Normalized();
+                            if (Vector3.Dot(playerDir, direction) < 0) {
                                 continue;
                             }
                         }
 
-                        var model = Matrix4.CreateTranslation(Chunk.Length * i, Chunk.Width * j, Chunk.Height * k);
-                        var mvp = model * view * projection;
-                        shader.SetUniform("mvp", ref mvp);
-
-                        if (chunkUpdates < MaxChunkUpdatesPerRender && chunkRequiresUpdate[i, j, k]) {
-                            UpdateChunk(i, j, k);
-                            chunkRequiresUpdate[i, j, k] = false;
-                            chunkUpdates++;
+                        if (chunks.ContainsKey(distance)) {
+                            chunks[distance].Add(chunk);
                         }
-
-                        chunkMeshes[i, j, k].Draw();
+                        else {
+                            chunks.Add(distance, new List<Chunk> {chunk});
+                        }
                     }
                 }
+            }
+
+            foreach (var chunk in chunks.SelectMany(kv => kv.Value)) {
+                // Update chunk mesh if required.
+                if (chunkUpdates < MaxChunkUpdatesPerRender && chunkRequiresUpdate[chunk.X, chunk.Y, chunk.Z]) {
+                    UpdateChunk(chunk.X, chunk.Y, chunk.Z);
+                    chunkRequiresUpdate[chunk.X, chunk.Y, chunk.Z] = false;
+                    chunkUpdates++;
+                }
+
+                // Draw chunk mesh.
+                var model = Matrix4.CreateTranslation(chunk.Min);
+                var mvp = model * vp;
+                shader.SetUniform("mvp", ref mvp);
+                chunkMeshes[chunk.X, chunk.Y, chunk.Z].Draw();
             }
         }
 

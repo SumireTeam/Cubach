@@ -1,5 +1,6 @@
 ﻿{
   "fontFamily": "Open Sans",
   "fontSize": 16,
-  "savePath": "./Saves"
+  "savePath": "./Saves",
+  "renderDistance": 384
 }

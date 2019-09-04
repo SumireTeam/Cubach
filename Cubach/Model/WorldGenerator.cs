@@ -21,16 +21,16 @@ namespace Cubach.Model
         {
             var tasks = new List<Task>();
 
-            for (int i = 0; i < World.Length; ++i) {
-                for (int j = 0; j < World.Width; ++j) {
-                    var cx = i;
-                    var cy = j;
+            for (var i = 0; i < World.Length; ++i) {
+                for (var j = 0; j < World.Width; ++j) {
+                    var x = i;
+                    var y = j;
                     var task = Task.Run(() => {
-                        for (int k = 0; k < World.Height; ++k) {
-                            var cz = k;
-                            var chunk = chunkGenerator.Create(cx, cy, cz);
-                            world.Chunks[cx, cy, cz] = chunk;
-                            ChunkGenerated(this, new ChunkEventArgs(cx, cy, cz, chunk));
+                        for (var k = 0; k < World.Height; ++k) {
+                            var z = k;
+                            var chunk = chunkGenerator.Create(x, y, z);
+                            world.Chunks[x, y, z] = chunk;
+                            ChunkGenerated(this, new ChunkEventArgs(chunk));
                         }
                     });
                     tasks.Add(task);
