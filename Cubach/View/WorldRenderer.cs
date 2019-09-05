@@ -31,7 +31,7 @@ namespace Cubach.View
             for (int i = 0; i < World.Length; ++i) {
                 for (int j = 0; j < World.Width; ++j) {
                     for (int k = 0; k < World.Height; ++k) {
-                        var chunk = world.Chunks[i, j, k];
+                        var chunk = world.GetChunk(i, j, k);
                         chunkMeshes[i, j, k] = chunkRenderer.CreateChunkMesh(world, chunk);
                     }
                 }
@@ -45,7 +45,7 @@ namespace Cubach.View
 
         private void UpdateChunk(int x, int y, int z)
         {
-            var chunk = world.Chunks[x, y, z];
+            var chunk = world.GetChunk(x, y, z);
             var mesh = chunkMeshes[x, y, z];
             chunkRenderer.UpdateChunkMesh(world, chunk, mesh);
         }

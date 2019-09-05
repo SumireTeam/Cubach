@@ -9,7 +9,7 @@ namespace Cubach.Model
         public const int Width = 8;
         public const int Height = 8;
 
-        public readonly Chunk[,,] Chunks = new Chunk[Length, Width, Height];
+        private readonly Chunk[,,] Chunks = new Chunk[Length, Width, Height];
         public readonly Player Player;
 
         public event EventHandler<ChunkEventArgs> ChunkUpdated = (s, e) => { };
@@ -70,9 +70,9 @@ namespace Cubach.Model
             return chunk.GetBlock(i, j, k);
         }
 
-        public void SetChunk(int i, int j, int k, Chunk chunk)
+        public void SetChunk(Chunk chunk)
         {
-            Chunks[i, j, k] = chunk;
+            Chunks[chunk.X, chunk.Y, chunk.Z] = chunk;
             ChunkUpdated(this, new ChunkEventArgs(chunk));
         }
 

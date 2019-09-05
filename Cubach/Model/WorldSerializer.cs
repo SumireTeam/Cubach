@@ -20,7 +20,7 @@ namespace Cubach.Model
                             var key = $"chunk:{i}:{j}:{k}:blocks";
                             writer.Write(key);
 
-                            var chunk = world.Chunks[i, j, k];
+                            var chunk = world.GetChunk(i, j, k);
                             var value = chunk.GetBytes();
                             writer.Write((byte) DataType.ByteArray);
                             writer.Write(value.Length);
@@ -49,7 +49,7 @@ namespace Cubach.Model
                                 var j = int.Parse(blocksMatch.Groups[2].Value);
                                 var k = int.Parse(blocksMatch.Groups[3].Value);
                                 var chunk = Chunk.Create(i, j, k, data);
-                                world.SetChunk(i, j, k, chunk);
+                                world.SetChunk(chunk);
                             }
 
                             break;

@@ -29,7 +29,7 @@ namespace Cubach.Model
                         for (var k = 0; k < World.Height; ++k) {
                             var z = k;
                             var chunk = chunkGenerator.Create(x, y, z);
-                            world.Chunks[x, y, z] = chunk;
+                            world.SetChunk(chunk);
                             ChunkGenerated(this, new ChunkEventArgs(chunk));
                         }
                     });
