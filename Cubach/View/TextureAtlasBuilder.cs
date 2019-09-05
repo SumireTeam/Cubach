@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Drawing.Drawing2D;
 using System.Linq;
 using OpenTK;
 
@@ -27,7 +28,11 @@ namespace Cubach.View
             var targetHeight = images.Count > 0 ? images.Select(kv => kv.Value.Height).Max() : 1;
             using (var targetImage = new Bitmap(targetWidth, targetHeight))
             using (var graphics = Graphics.FromImage(targetImage)) {
-                graphics.Clear(Color.Magenta);
+                graphics.CompositingQuality = CompositingQuality.HighQuality;
+                graphics.InterpolationMode = InterpolationMode.HighQualityBicubic;
+                graphics.PixelOffsetMode = PixelOffsetMode.HighQuality;
+
+                graphics.Clear(Color.Transparent);
 
                 var x = 0;
                 foreach (var kv in images) {
@@ -38,8 +43,8 @@ namespace Cubach.View
                     var uvMax = uvMin + new Vector2(width / (float) targetWidth, height / (float) targetHeight);
                     regions.Add(kv.Key, new TextureRegion(uvMin, uvMax));
 
-                    graphics.DrawImage(kv.Value, x, 0);
-                    x += kv.Value.Width;
+                    graphics.DrawImage(image, x, 0, width, height);
+                    x += width;
                 }
 
                 var texture = textureFactory.Create(targetImage, true);

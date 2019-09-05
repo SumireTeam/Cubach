@@ -1,4 +1,5 @@
-﻿using OpenTK;
+﻿using System;
+using OpenTK;
 
 namespace Cubach.Model
 {
@@ -10,8 +11,21 @@ namespace Cubach.Model
 
         private float GetHeight(int x, int y)
         {
-            const float baseHeight = World.Height * Chunk.Height / 2f;
-            float height = baseHeight;
+            const float baseHeight = World.Height * Chunk.Height / 4f;
+            var position = new Vector2(x, y);
+
+            var worldLength = Chunk.Length * World.Length;
+            var worldWidth = Chunk.Width * World.Width;
+
+            var worldHalfLength = worldLength / 2f;
+            var worldHalfWidth = worldWidth / 2f;
+
+            var worldCenter = new Vector2(worldHalfLength, Chunk.Width * World.Width / 2f);
+            var worldCenterDistance = MathUtils.TaxicabDistance(position, worldCenter);
+
+            var distanceClamped = Math.Min(worldCenterDistance, worldHalfLength);
+            var height = 2 * baseHeight;
+            height -= (float) (Math.Cos(distanceClamped * Math.PI / worldHalfLength - Math.PI) + 1) * baseHeight / 2f;
 
             const float frequency = 128;
             const float amplitude = 32;
@@ -27,10 +41,15 @@ namespace Cubach.Model
 
         public Chunk Create(int cx, int cy, int cz)
         {
+            const float baseHeight = World.Height * Chunk.Height / 4f;
+            const float seaLevel = baseHeight * 1.25f;
+
             var airId = BlockType.GetIdByName("Air");
             var stoneId = BlockType.GetIdByName("Stone");
             var dirtId = BlockType.GetIdByName("Dirt");
             var grassId = BlockType.GetIdByName("Grass");
+            var sandId = BlockType.GetIdByName("Sand");
+            var waterId = BlockType.GetIdByName("Water");
 
             var chunk = new Chunk(cx, cy, cz);
             for (var i = 0; i < Chunk.Length; ++i) {
@@ -44,28 +63,20 @@ namespace Cubach.Model
                         var z = cz * Chunk.Height + k;
 
                         var blockTypeId = airId;
+                        if (z < seaLevel) {
+                            blockTypeId = waterId;
+                        }
 
                         if (z <= (int) height) {
                             // Make top layer of grass, 5 layers of dirt, and stone to the bottom.
                             if (z == (int) height) {
-                                blockTypeId = grassId;
+                                blockTypeId = height > seaLevel ? grassId : sandId;
                             }
                             else if (z > (int) height - 5) {
-                                blockTypeId = dirtId;
+                                blockTypeId = height > seaLevel ? dirtId : sandId;
                             }
                             else {
                                 blockTypeId = stoneId;
-                            }
-
-                            // Create caves.
-                            float r = 0;
-                            for (int n = 0; n < 4; ++n) {
-                                float d = 1 << n;
-                                r += noiseProvider.Noise(new Vector3(x, y, z) * d / 100) / d;
-                            }
-
-                            if (-0.015 < r && r < 0.015) {
-                                blockTypeId = airId;
                             }
                         }
 

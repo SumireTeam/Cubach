@@ -1,7 +1,8 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
-using System.Threading.Tasks;
+using System.Threading;
 
 namespace Cubach
 {
@@ -9,6 +10,8 @@ namespace Cubach
     {
         private readonly Server server;
         private readonly Client client;
+
+        private Thread serverThread;
 
         private Program()
         {
@@ -22,13 +25,25 @@ namespace Cubach
 
         private void Run()
         {
-            Task.Run(() => { server.Run(); });
-            client.Connect(new LocalServerConnection(server));
+            serverThread = new Thread(() => { server.Run(); });
+            serverThread.Start();
+
+            var clientMessageQueue = new Queue<IMessage>();
+            var serverMessageQueue = new Queue<IMessage>();
+
+            var serverConnection = new LocalServerConnection(clientMessageQueue, serverMessageQueue);
+            client.Connect(serverConnection);
+
+            var clientConnection = new LocalClientConnection(serverMessageQueue, clientMessageQueue);
+            server.Connect(clientConnection);
+
             client.Run();
         }
 
         public void Dispose()
         {
+            serverThread?.Abort();
+
             server.Dispose();
             client.Dispose();
         }

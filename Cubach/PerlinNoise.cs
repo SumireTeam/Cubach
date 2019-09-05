@@ -1,14 +1,8 @@
-﻿using OpenTK;
 using System;
+using OpenTK;
 
 namespace Cubach
 {
-    public interface INoiseProvider
-    {
-        float Noise(Vector2 position);
-        float Noise(Vector3 position);
-    }
-
     public class PerlinNoise : INoiseProvider
     {
         private readonly IRandomProvider randomProvider;

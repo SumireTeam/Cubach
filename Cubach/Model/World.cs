@@ -5,11 +5,12 @@ namespace Cubach.Model
 {
     public class World
     {
-        public const int Length = 8;
-        public const int Width = 8;
+        public const int Length = 16;
+        public const int Width = 16;
         public const int Height = 8;
 
-        private readonly Chunk[,,] Chunks = new Chunk[Length, Width, Height];
+        private readonly Chunk[,,] chunks = new Chunk[Length, Width, Height];
+
         public readonly Player Player;
 
         public event EventHandler<ChunkEventArgs> ChunkUpdated = (s, e) => { };
@@ -19,7 +20,7 @@ namespace Cubach.Model
             for (var i = 0; i < Length; ++i) {
                 for (var j = 0; j < Width; ++j) {
                     for (var k = 0; k < Height; ++k) {
-                        Chunks[i, j, k] = new Chunk(i, j, k);
+                        chunks[i, j, k] = new Chunk(i, j, k);
                     }
                 }
             }
@@ -41,7 +42,7 @@ namespace Cubach.Model
                 return null;
             }
 
-            return Chunks[i, j, k];
+            return chunks[i, j, k];
         }
 
         /// <summary>
@@ -72,7 +73,7 @@ namespace Cubach.Model
 
         public void SetChunk(Chunk chunk)
         {
-            Chunks[chunk.X, chunk.Y, chunk.Z] = chunk;
+            chunks[chunk.X, chunk.Y, chunk.Z] = chunk;
             ChunkUpdated(this, new ChunkEventArgs(chunk));
         }
 

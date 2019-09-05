@@ -224,7 +224,6 @@ namespace Cubach
             world.Update(e.Time);
 
             GL.Enable(EnableCap.DepthTest);
-            GL.Disable(EnableCap.Blend);
 
             blockTextureAtlas.Texture.Bind();
 
@@ -232,7 +231,6 @@ namespace Cubach
             worldRenderer.Draw(blockProgram, aspect, e.Time);
 
             GL.Disable(EnableCap.DepthTest);
-            GL.Enable(EnableCap.Blend);
 
             textProgram.Use();
             var mvp = Matrix4.CreateOrthographicOffCenter(0, window.Width, window.Height, 0, -1, 1);

@@ -28,7 +28,7 @@ namespace Cubach.View.OpenGL
         public void Bind(int slot = 0)
         {
             GL.ActiveTexture(TextureUnit.Texture0 + slot);
-            GL.BindTexture(TextureTarget.Texture2D, (int)Handle);
+            GL.BindTexture(TextureTarget.Texture2D, (int) Handle);
         }
 
         public static void Bind(GLTexture texture, int slot = 0) => texture.Bind(slot);
@@ -36,23 +36,21 @@ namespace Cubach.View.OpenGL
         public void SetImage(Bitmap image, bool withAlpha = false)
         {
             Bind();
-            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapS, (int)TextureWrapMode.Repeat);
-            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapT, (int)TextureWrapMode.Repeat);
-            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Nearest);
-            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.NearestMipmapLinear);
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapS, (int) TextureWrapMode.Repeat);
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapT, (int) TextureWrapMode.Repeat);
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int) TextureMagFilter.Nearest);
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int) TextureMinFilter.NearestMipmapLinear);
             GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureBaseLevel, 0);
             GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMaxLevel, 4);
 
-            int width = image.Width;
-            int height = image.Height;
+            var width = image.Width;
+            var height = image.Height;
 
             // Normalize pixel format.
             var gdiPF = withAlpha ? GDIPixelFormat.Format32bppArgb : GDIPixelFormat.Format24bppRgb;
-            using (Bitmap copy = new Bitmap(width, height, gdiPF))
-            {
-                using (Graphics graphics = Graphics.FromImage(copy))
-                {
-                    graphics.DrawImage(image, 0, 0);
+            using (var copy = new Bitmap(width, height, gdiPF)) {
+                using (var graphics = Graphics.FromImage(copy)) {
+                    graphics.DrawImage(image, 0, 0, width, height);
                 }
 
                 copy.RotateFlip(RotateFlipType.RotateNoneFlipY);

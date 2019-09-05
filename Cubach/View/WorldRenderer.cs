@@ -21,6 +21,9 @@ namespace Cubach.View
         private readonly IMesh<VertexP3N3T2>[,,] chunkMeshes =
             new IMesh<VertexP3N3T2>[World.Length, World.Width, World.Height];
 
+        private readonly IMesh<VertexP3N3T2>[,,] chunkSemiTransparentMeshes =
+            new IMesh<VertexP3N3T2>[World.Length, World.Width, World.Height];
+
         public WorldRenderer(Configuration config, World world, ICamera camera, ChunkRenderer chunkRenderer)
         {
             this.config = config;
@@ -28,11 +31,13 @@ namespace Cubach.View
             this.camera = camera;
             this.chunkRenderer = chunkRenderer;
 
-            for (int i = 0; i < World.Length; ++i) {
-                for (int j = 0; j < World.Width; ++j) {
-                    for (int k = 0; k < World.Height; ++k) {
+            for (var i = 0; i < World.Length; ++i) {
+                for (var j = 0; j < World.Width; ++j) {
+                    for (var k = 0; k < World.Height; ++k) {
                         var chunk = world.GetChunk(i, j, k);
-                        chunkMeshes[i, j, k] = chunkRenderer.CreateChunkMesh(world, chunk);
+                        chunkMeshes[i, j, k] = chunkRenderer.CreateChunkMesh(world, chunk, BlockTransparency.Opaque);
+                        chunkSemiTransparentMeshes[i, j, k] =
+                            chunkRenderer.CreateChunkMesh(world, chunk, BlockTransparency.SemiTransparent);
                     }
                 }
             }
@@ -46,8 +51,12 @@ namespace Cubach.View
         private void UpdateChunk(int x, int y, int z)
         {
             var chunk = world.GetChunk(x, y, z);
+
             var mesh = chunkMeshes[x, y, z];
-            chunkRenderer.UpdateChunkMesh(world, chunk, mesh);
+            chunkRenderer.UpdateChunkMesh(world, chunk, BlockTransparency.Opaque, mesh);
+
+            var semiTransparentMesh = chunkSemiTransparentMeshes[x, y, z];
+            chunkRenderer.UpdateChunkMesh(world, chunk, BlockTransparency.SemiTransparent, semiTransparentMesh);
         }
 
         public void Draw(ShaderProgram shader, float aspect, float time)
@@ -69,8 +78,10 @@ namespace Cubach.View
                     for (var k = 0; k < World.Height; ++k) {
                         // Skip empty chunks that not requires update.
                         var chunkMesh = chunkMeshes[i, j, k];
+                        var chunkSemiTransparentMesh = chunkSemiTransparentMeshes[i, j, k];
                         var requiresUpdate = chunkRequiresUpdate[i, j, k];
-                        if (chunkMesh.VertexCount == 0 && !requiresUpdate) {
+                        if (chunkMesh.VertexCount == 0
+                            && chunkSemiTransparentMesh.VertexCount == 0 && !requiresUpdate) {
                             continue;
                         }
 
@@ -115,6 +126,14 @@ namespace Cubach.View
                 shader.SetUniform("mvp", ref mvp);
                 chunkMeshes[chunk.X, chunk.Y, chunk.Z].Draw();
             }
+
+            foreach (var chunk in chunks.SelectMany(kv => kv.Value)) {
+                // Draw chunk semi-transparent mesh.
+                var model = Matrix4.CreateTranslation(chunk.Min);
+                var mvp = model * vp;
+                shader.SetUniform("mvp", ref mvp);
+                chunkSemiTransparentMeshes[chunk.X, chunk.Y, chunk.Z].Draw();
+            }
         }
 
         public void Dispose()
@@ -122,7 +141,8 @@ namespace Cubach.View
             for (int i = 0; i < World.Length; ++i) {
                 for (int j = 0; j < World.Width; ++j) {
                     for (int k = 0; k < World.Height; ++k) {
-                        chunkMeshes[i, j, k].Dispose();
+                        chunkMeshes[i, j, k]?.Dispose();
+                        chunkSemiTransparentMeshes[i, j, k]?.Dispose();
                     }
                 }
             }

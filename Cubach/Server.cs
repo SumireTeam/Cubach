@@ -12,11 +12,15 @@ namespace Cubach
     {
         private readonly Configuration config;
 
+        private IClientConnection clientConnection;
+
         public World World { get; } = new World();
 
         public Server(Configuration config)
         {
             this.config = config;
+
+            World.ChunkUpdated += (s, e) => { clientConnection?.SendChunk(e.Chunk); };
 
             // Loads world from the file if it is exists. Generates and saves world to the file otherwise.
             const string worldFileName = "world.bin";
@@ -36,16 +40,10 @@ namespace Cubach
         {
             Console.WriteLine("[Server] Loading world...");
 
-            using (var stream = new MemoryStream()) {
-                using (var fileStream = File.OpenRead(path))
-                using (var gzStream = new GZipStream(fileStream, CompressionMode.Decompress)) {
-                    gzStream.CopyTo(stream);
-                }
-
-                stream.Seek(0, SeekOrigin.Begin);
-
+            using (var fileStream = File.OpenRead(path))
+            using (var gzStream = new GZipStream(fileStream, CompressionMode.Decompress)) {
                 var serializer = new WorldSerializer();
-                serializer.Load(stream, World);
+                serializer.Load(gzStream, World);
             }
 
             Console.WriteLine("[Server] Loaded world");
@@ -54,6 +52,10 @@ namespace Cubach
         private void SaveWorld(string path)
         {
             Console.WriteLine("[Server] Saving world...");
+
+            if (!Directory.Exists(config.SavePath)) {
+                Directory.CreateDirectory(config.SavePath);
+            }
 
             using (var fileStream = File.OpenWrite(path))
             using (var gzStream = new GZipStream(fileStream, CompressionMode.Compress)) {
@@ -73,11 +75,28 @@ namespace Cubach
             var chunkGenerator = new ChunkGenerator(noiseProvider);
             var worldGenerator = new WorldGenerator(World, chunkGenerator);
             worldGenerator.ChunkGenerated += (s, e) => {
-                Console.WriteLine($"[Server] Generated chunk {e.Chunk.X} {e.Chunk.Y} {e.Chunk.Z}");
+                Console.WriteLine($"[Server] Generated chunk {e.Chunk.X}, {e.Chunk.Y}, {e.Chunk.Z}");
             };
             worldGenerator.CreateChunks();
 
             Console.WriteLine("[Server] Generated world");
+        }
+
+        public void Connect(IClientConnection connection)
+        {
+            clientConnection = connection;
+            clientConnection.ChunksRequestReceived += (s, e) => {
+                for (var i = 0; i < World.Length; ++i) {
+                    for (var j = 0; j < World.Length; ++j) {
+                        for (var k = 0; k < World.Length; ++k) {
+                            var chunk = World.GetChunk(i, j, k);
+                            if (chunk != null) {
+                                clientConnection.SendChunk(chunk);
+                            }
+                        }
+                    }
+                }
+            };
         }
 
         public void Run()
@@ -87,10 +106,14 @@ namespace Cubach
 
             while (true) {
                 sw.Restart();
+                clientConnection?.ProcessMessages();
                 World.Update(1f / updateRate);
                 sw.Stop();
 
-                Thread.Sleep((int) (1000f / updateRate - sw.ElapsedMilliseconds));
+                var delay = (int) (1000f / updateRate - sw.ElapsedMilliseconds);
+                if (delay >= 0) {
+                    Thread.Sleep(delay);
+                }
             }
         }
 

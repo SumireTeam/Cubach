@@ -15,7 +15,7 @@ namespace Cubach.View
             this.blockTextureAtlas = blockTextureAtlas;
         }
 
-        private VertexP3N3T2[] GetChunkVertexes(World world, Chunk chunk)
+        private VertexP3N3T2[] GetChunkVertexes(World world, Chunk chunk, BlockTransparency transparency)
         {
             // Non-empty natural generated chunks have an average of 50k vertexes.
             // Use the next power of two for the initial capacity to avoid unnecessary allocations.
@@ -24,12 +24,12 @@ namespace Cubach.View
                 for (var j = 0; j < Chunk.Width; ++j) {
                     for (var k = 0; k < Chunk.Height; ++k) {
                         var block = chunk.Blocks[i, j, k];
-                        if (block.Transparent) {
+                        if (block.Transparency != transparency) {
                             continue;
                         }
 
                         var rearBlock = world.GetBlockAt(chunk.Min + new Vector3(i - 1, j, k));
-                        var rearVisible = !rearBlock.HasValue || rearBlock.Value.Transparent;
+                        var rearVisible = !rearBlock.HasValue || rearBlock.Value.Transparency > block.Transparency;
                         if (rearVisible) {
                             var normal = -Vector3.UnitX;
                             var textureName = block.Textures.Rear;
@@ -47,7 +47,7 @@ namespace Cubach.View
                         }
 
                         var frontBlock = world.GetBlockAt(chunk.Min + new Vector3(i + 1, j, k));
-                        var frontVisible = !frontBlock.HasValue || frontBlock.Value.Transparent;
+                        var frontVisible = !frontBlock.HasValue || frontBlock.Value.Transparency > block.Transparency;
                         if (frontVisible) {
                             var normal = Vector3.UnitX;
                             var textureName = block.Textures.Front;
@@ -65,7 +65,7 @@ namespace Cubach.View
                         }
 
                         var leftBlock = world.GetBlockAt(chunk.Min + new Vector3(i, j - 1, k));
-                        var leftVisible = !leftBlock.HasValue || leftBlock.Value.Transparent;
+                        var leftVisible = !leftBlock.HasValue || leftBlock.Value.Transparency > block.Transparency;
                         if (leftVisible) {
                             var normal = -Vector3.UnitY;
                             var textureName = block.Textures.Left;
@@ -83,7 +83,7 @@ namespace Cubach.View
                         }
 
                         var rightBlock = world.GetBlockAt(chunk.Min + new Vector3(i, j + 1, k));
-                        var rightVisible = !rightBlock.HasValue || rightBlock.Value.Transparent;
+                        var rightVisible = !rightBlock.HasValue || rightBlock.Value.Transparency > block.Transparency;
                         if (rightVisible) {
                             var normal = Vector3.UnitY;
                             var textureName = block.Textures.Right;
@@ -101,7 +101,8 @@ namespace Cubach.View
                         }
 
                         var bottomBlock = world.GetBlockAt(chunk.Min + new Vector3(i, j, k - 1));
-                        var bottomVisible = !bottomBlock.HasValue || bottomBlock.Value.Transparent;
+                        var bottomVisible =
+                            !bottomBlock.HasValue || bottomBlock.Value.Transparency > block.Transparency;
                         if (bottomVisible) {
                             var normal = -Vector3.UnitZ;
                             var textureName = block.Textures.Bottom;
@@ -119,7 +120,7 @@ namespace Cubach.View
                         }
 
                         var topBlock = world.GetBlockAt(chunk.Min + new Vector3(i, j, k + 1));
-                        var topVisible = !topBlock.HasValue || topBlock.Value.Transparent;
+                        var topVisible = !topBlock.HasValue || topBlock.Value.Transparency > block.Transparency;
                         if (topVisible) {
                             var normal = Vector3.UnitZ;
                             var textureName = block.Textures.Top;
@@ -142,15 +143,15 @@ namespace Cubach.View
             return vertexes.ToArray();
         }
 
-        public IMesh<VertexP3N3T2> CreateChunkMesh(World world, Chunk chunk)
+        public IMesh<VertexP3N3T2> CreateChunkMesh(World world, Chunk chunk, BlockTransparency transparency)
         {
-            var vertexes = GetChunkVertexes(world, chunk);
+            var vertexes = GetChunkVertexes(world, chunk, transparency);
             return meshFactory.Create(vertexes);
         }
 
-        public void UpdateChunkMesh(World world, Chunk chunk, IMesh<VertexP3N3T2> mesh)
+        public void UpdateChunkMesh(World world, Chunk chunk, BlockTransparency transparency, IMesh<VertexP3N3T2> mesh)
         {
-            var vertexes = GetChunkVertexes(world, chunk);
+            var vertexes = GetChunkVertexes(world, chunk, transparency);
             mesh.SetData(vertexes);
         }
     }

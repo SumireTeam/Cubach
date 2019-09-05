@@ -28,15 +28,16 @@ namespace Cubach.Model
                         }
                     }
                 }
+
+                writer.Write("end");
             }
         }
 
         public void Load(Stream stream, World world)
         {
             using (var reader = new BinaryReader(stream)) {
-                var length = stream.Length;
-                while (stream.Position < length) {
-                    var key = reader.ReadString();
+                string key;
+                while ((key = reader.ReadString()) != "end") {
                     var type = (DataType) reader.ReadByte();
                     switch (type) {
                         case DataType.ByteArray:
