@@ -1,10 +1,14 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.IO.Compression;
 using System.Threading;
 using System.Threading.Tasks;
 using Cubach.Model;
+using Cubach.Network;
+using Cubach.Network.Local;
+using Cubach.Network.Remote;
 
 namespace Cubach
 {
@@ -12,7 +16,7 @@ namespace Cubach
     {
         private readonly Configuration config;
 
-        private IClientConnection clientConnection;
+        private IClientManager clientManager;
 
         public World World { get; } = new World();
 
@@ -20,7 +24,7 @@ namespace Cubach
         {
             this.config = config;
 
-            World.ChunkUpdated += (s, e) => { clientConnection?.SendChunk(e.Chunk); };
+            World.ChunkUpdated += (s, e) => { clientManager?.SendChunk(e.Chunk); };
 
             // Loads world from the file if it is exists. Generates and saves world to the file otherwise.
             const string worldFileName = "world.bin";
@@ -74,39 +78,54 @@ namespace Cubach
             var noiseProvider = new PerlinNoise(randomProvider);
             var chunkGenerator = new ChunkGenerator(noiseProvider);
             var worldGenerator = new WorldGenerator(World, chunkGenerator);
+
             worldGenerator.ChunkGenerated += (s, e) => {
                 Console.WriteLine($"[Server] Generated chunk {e.Chunk.X}, {e.Chunk.Y}, {e.Chunk.Z}");
             };
+
             worldGenerator.CreateChunks();
 
             Console.WriteLine("[Server] Generated world");
         }
 
-        public void Connect(IClientConnection connection)
+        private void Run()
         {
-            clientConnection = connection;
-            clientConnection.ChunksRequestReceived += (s, e) => {
+            clientManager.Error += (s, e) => {
+                var error = e.Error;
+                Console.WriteLine($"[Server] Error: {error}");
+            };
+
+            clientManager.Connected += (s, e) => {
+                var id = e.Connection.ID;
+                Console.WriteLine($"[Server] Client connected: {id}");
+            };
+
+            clientManager.Disconnected += (s, e) => {
+                var id = e.Connection.ID;
+                Console.WriteLine($"[Server] Client disconnected: {id}");
+            };
+
+            clientManager.ChunksRequestReceived += (s, e) => {
                 for (var i = 0; i < World.Length; ++i) {
                     for (var j = 0; j < World.Length; ++j) {
                         for (var k = 0; k < World.Length; ++k) {
                             var chunk = World.GetChunk(i, j, k);
                             if (chunk != null) {
-                                clientConnection.SendChunk(chunk);
+                                e.Connection.SendChunk(chunk);
                             }
                         }
                     }
                 }
             };
-        }
 
-        public void Run()
-        {
+            clientManager.Run();
+
             const int updateRate = 60;
             var sw = new Stopwatch();
 
             while (true) {
                 sw.Restart();
-                clientConnection?.ProcessMessages();
+                clientManager.ProcessMessages();
                 World.Update(1f / updateRate);
                 sw.Stop();
 
@@ -115,6 +134,20 @@ namespace Cubach
                     Thread.Sleep(delay);
                 }
             }
+        }
+
+        public void RunLocal(Queue<ServerMessage> serverQueue, Queue<ClientMessage> clientQueue)
+        {
+            var localClientManager = new LocalClientManager();
+            localClientManager.AddConnection(serverQueue, clientQueue);
+            clientManager = localClientManager;
+            Run();
+        }
+
+        public void RunRemote(int port)
+        {
+            clientManager = new RemoteClientManager(port);
+            Run();
         }
 
         public void Dispose() { }

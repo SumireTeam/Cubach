@@ -54,15 +54,26 @@
     <Compile Include="AABB.cs" />
     <Compile Include="Client.cs" />
     <Compile Include="Cube.cs" />
-    <Compile Include="IClientConnection.cs" />
-    <Compile Include="LocalClientConnection.cs" />
-    <Compile Include="LocalServerConnection.cs" />
-    <Compile Include="Message.cs" />
     <Compile Include="Model\BlockTextures.cs" />
     <Compile Include="Model\BlockType.cs" />
+    <Compile Include="Model\ChunkSerializer.cs" />
+    <Compile Include="Network\ClientConnectionEventArgs.cs" />
+    <Compile Include="Network\ErrorEventArgs.cs" />
+    <Compile Include="Network\IClientConnection.cs" />
+    <Compile Include="Network\IClientManager.cs" />
+    <Compile Include="Network\IServerConnection.cs" />
+    <Compile Include="Network\Local\ClientMessage.cs" />
+    <Compile Include="Network\Local\LocalClientConnection.cs" />
+    <Compile Include="Network\Local\LocalClientManager.cs" />
+    <Compile Include="Network\Local\LocalServerConnection.cs" />
+    <Compile Include="Network\Local\ServerMessage.cs" />
+    <Compile Include="Network\Remote\ClientMessageType.cs" />
+    <Compile Include="Network\Remote\LidgrenExtensions.cs" />
+    <Compile Include="Network\Remote\RemoteClientConnection.cs" />
+    <Compile Include="Network\Remote\RemoteClientManager.cs" />
+    <Compile Include="Network\Remote\RemoteServerConnection.cs" />
+    <Compile Include="Network\Remote\ServerMessageType.cs" />
     <Compile Include="PerlinNoise.cs" />
-    <Compile Include="RemoteServerConnection.cs" />
-    <Compile Include="IServerConnection.cs" />
     <Compile Include="Line.cs" />
     <Compile Include="MathUtils.cs" />
     <Compile Include="Model\Block.cs" />
@@ -112,24 +123,21 @@
     <None Include="config.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Include="Fonts\OpenSans\OpenSans-Regular.ttf">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="Fonts\OpenSans\OpenSans-Semibold.ttf">
+    <None Include="Fonts\OpenSans\font.ttf">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Include="OpenTK.dll.config" />
     <None Include="packages.config" />
-    <None Include="Shaders\text.frag">
+    <None Include="Shaders\ui.frag">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Include="Shaders\text.vert">
+    <None Include="Shaders\ui.vert">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Include="Shaders\cube.frag">
+    <None Include="Shaders\world.frag">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Include="Shaders\cube.vert">
+    <None Include="Shaders\world.vert">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>

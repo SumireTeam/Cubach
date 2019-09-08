@@ -1,6 +1,8 @@
 ﻿using Cubach.Model;
 using OpenTK;
 using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Cubach.View
 {
@@ -151,8 +153,11 @@ namespace Cubach.View
 
         public void UpdateChunkMesh(World world, Chunk chunk, BlockTransparency transparency, IMesh<VertexP3N3T2> mesh)
         {
-            var vertexes = GetChunkVertexes(world, chunk, transparency);
-            mesh.SetData(vertexes);
+            Task.Run(() => {
+                var vertexes = GetChunkVertexes(world, chunk, transparency);
+
+                Client.DeferredTasks.Enqueue(() => { mesh.SetData(vertexes); });
+            });
         }
     }
 }

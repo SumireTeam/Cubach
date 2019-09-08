@@ -1,7 +1,12 @@
 using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
 using Cubach.Model;
+using Cubach.Network;
+using Cubach.Network.Local;
+using Cubach.Network.Remote;
 using Cubach.View;
 using Cubach.View.OpenGL;
 using OpenTK;
@@ -25,11 +30,13 @@ namespace Cubach
         private TextRenderer<GLTexture> textRenderer;
 
         private TextureAtlas<GLTexture> blockTextureAtlas;
-        private ShaderProgram blockProgram;
-        private ShaderProgram textProgram;
+        private ShaderProgram worldProgram;
+        private ShaderProgram uiProgram;
 
         private readonly FirstPersonCamera camera;
         private WorldRenderer worldRenderer;
+
+        private bool showInfo = false;
 
         private string vendor = "";
         private string renderer = "";
@@ -38,24 +45,19 @@ namespace Cubach
 
         private float avgFPS = 60;
 
+        public static readonly ConcurrentQueue<Action> DeferredTasks = new ConcurrentQueue<Action>();
+
         public Client(Configuration config)
         {
             this.config = config;
 
-            window = new GLWindow(width: 1024, height: 768, title: "Cubach");
+            window = new GLWindow(config.Width, config.Height, "Cubach", config.Fullscreen);
 
             window.Load += Window_Load;
             window.Resize += Window_Resize;
             window.RenderFrame += Window_RenderFrame;
 
             camera = new FirstPersonCamera();
-        }
-
-        public void Connect(IServerConnection connection)
-        {
-            serverConnection = connection;
-            serverConnection.ChunkReceived += (s, e) => { world.SetChunk(e.Chunk); };
-            serverConnection.RequestChunks();
         }
 
         private void LoadTextures()
@@ -79,22 +81,22 @@ namespace Cubach
         {
             Console.WriteLine("[Client] Loading shaders...");
 
-            using (var vs = Shader.Create(ShaderType.VertexShader, File.ReadAllText("./Shaders/cube.vert")))
-            using (var fs = Shader.Create(ShaderType.FragmentShader, File.ReadAllText("./Shaders/cube.frag"))) {
-                blockProgram = ShaderProgram.Create(vs, fs);
+            using (var vs = Shader.Create(ShaderType.VertexShader, File.ReadAllText("./Shaders/world.vert")))
+            using (var fs = Shader.Create(ShaderType.FragmentShader, File.ReadAllText("./Shaders/world.frag"))) {
+                worldProgram = ShaderProgram.Create(vs, fs);
 
                 var mvp = Matrix4.Identity;
-                blockProgram.SetUniform("mvp", ref mvp);
-                blockProgram.SetUniform("colorTexture", 0);
+                worldProgram.SetUniform("mvp", ref mvp);
+                worldProgram.SetUniform("colorTexture", 0);
             }
 
-            using (var vs = Shader.Create(ShaderType.VertexShader, File.ReadAllText("./Shaders/text.vert")))
-            using (var fs = Shader.Create(ShaderType.FragmentShader, File.ReadAllText("./Shaders/text.frag"))) {
-                textProgram = ShaderProgram.Create(vs, fs);
+            using (var vs = Shader.Create(ShaderType.VertexShader, File.ReadAllText("./Shaders/ui.vert")))
+            using (var fs = Shader.Create(ShaderType.FragmentShader, File.ReadAllText("./Shaders/ui.frag"))) {
+                uiProgram = ShaderProgram.Create(vs, fs);
 
                 var mvp = Matrix4.Identity;
-                textProgram.SetUniform("mvp", ref mvp);
-                textProgram.SetUniform("colorTexture", 0);
+                uiProgram.SetUniform("mvp", ref mvp);
+                uiProgram.SetUniform("colorTexture", 0);
             }
 
             Console.WriteLine("[Client] Loaded shaders");
@@ -132,15 +134,25 @@ namespace Cubach
 
         private void DrawString(Vector2 position, string text)
         {
-            var shadowPos = position + new Vector2(1, 1);
             var shadowColor = new Color4(0.1f, 0.1f, 0.1f, 1f);
-            var textColor = new Color4(1f, 1f, 1f, 1f);
-            textRenderer.DrawString(shadowPos, config.FontFamily, config.FontSize, text, shadowColor);
+            var textColor = new Color4(0.55f, 0.55f, 0.55f, 1f);
+            var text2Color = new Color4(1f, 1f, 1f, 1f);
+
+            var offset = new Vector2(-1, -1);
+
+            textRenderer.DrawString(position - offset, config.FontFamily, config.FontSize, text, shadowColor);
             textRenderer.DrawString(position, config.FontFamily, config.FontSize, text, textColor);
+            textRenderer.DrawString(position + offset, config.FontFamily, config.FontSize, text, text2Color);
         }
+
+        private bool PreviousF3State = false;
 
         private void HandleInput(float elapsedTime)
         {
+            if (!window.HasFocus) {
+                return;
+            }
+
             const float moveSpeed = 10f;
             const float rotationSpeed = 1f;
 
@@ -149,6 +161,7 @@ namespace Cubach
             var up = camera.Up;
 
             var keyboardState = Keyboard.GetState();
+            var shift = keyboardState.IsKeyDown(Key.LShift);
             var moveDirection = Vector3.Zero;
 
             if (keyboardState.IsKeyDown(Key.A)) {
@@ -175,8 +188,19 @@ namespace Cubach
                 moveDirection -= Vector3.UnitZ;
             }
 
+            if (keyboardState.IsKeyDown(Key.Escape)) {
+                window.Close();
+            }
+
+            var f3State = keyboardState.IsKeyDown(Key.F3);
+            if (f3State && !PreviousF3State) {
+                showInfo = !showInfo;
+            }
+
+            PreviousF3State = f3State;
+
             if (moveDirection.Length > 0) {
-                world.Player.Position += moveDirection.Normalized() * moveSpeed * elapsedTime;
+                world.Player.Position += moveDirection.Normalized() * moveSpeed * elapsedTime * (shift ? 5 : 1);
             }
 
             if (keyboardState.IsKeyDown(Key.Left)) {
@@ -212,29 +236,40 @@ namespace Cubach
             }
 
             world.Player.Orientation.Normalize();
-
-            camera.Position = world.Player.Position;
-            camera.Orientation = world.Player.Orientation;
         }
 
         private void Window_RenderFrame(object sender, TimeEventArgs e)
         {
-            serverConnection?.ProcessMessages();
+            serverConnection.ProcessMessages();
+
             HandleInput(e.Time);
+
+            camera.Position = world.Player.Position;
+            camera.Orientation = world.Player.Orientation;
+
             world.Update(e.Time);
+
+            while (DeferredTasks.Count > 0) {
+                if (DeferredTasks.TryDequeue(out var task)) {
+                    task();
+                }
+            }
+
+            GL.ClearColor(0.6f, 0.7f, 0.8f, 1);
+            GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
 
             GL.Enable(EnableCap.DepthTest);
 
             blockTextureAtlas.Texture.Bind();
 
             var aspect = window.Width / (float) window.Height;
-            worldRenderer.Draw(blockProgram, aspect, e.Time);
+            worldRenderer.Draw(worldProgram, aspect, e.Time);
 
             GL.Disable(EnableCap.DepthTest);
 
-            textProgram.Use();
+            uiProgram.Use();
             var mvp = Matrix4.CreateOrthographicOffCenter(0, window.Width, window.Height, 0, -1, 1);
-            textProgram.SetUniform("mvp", ref mvp);
+            uiProgram.SetUniform("mvp", ref mvp);
 
             // Apply exponential smoothing to the FPS.
             var fps = 1 / e.Time;
@@ -243,18 +278,55 @@ namespace Cubach
             var fpsStr = $"FPS {(int) Math.Floor(avgFPS)}";
             DrawString(new Vector2(8, 8), fpsStr);
 
-            var position = camera.Position;
-            var direction = camera.Front;
-            var posStr = $"Pos {position.X:0.00}, {position.Y:0.00}, {position.Z:0.00}\n"
-                + $"Dir {direction.X:0.00}, {direction.Y:0.00}, {direction.Z:0.00}";
-            DrawString(new Vector2(8, 8 + 1.5f * 16), posStr);
+            if (showInfo) {
+                var position = camera.Position;
+                var direction = camera.Front;
+                var fovy = MathHelper.RadiansToDegrees(camera.FieldOfViewY);
+                var posStr = $"Pos {position.X:0.00}, {position.Y:0.00}, {position.Z:0.00}\n"
+                             + $"Dir {direction.X:0.00}, {direction.Y:0.00}, {direction.Z:0.00}\n"
+                             + $"FOV {fovy:0.00}";
+                DrawString(new Vector2(8, 8 + 1.5f * 16), posStr);
 
-            var info = $"{vendor}\n{renderer}\n{version}\n{glsl}";
-            var infoSize = textRenderer.MeasureString(config.FontFamily, config.FontSize, info);
-            DrawString(new Vector2(window.Width - infoSize.X - 8, 8), info);
+                var info = $"{vendor}\n{renderer}\n{version}\n{glsl}";
+                var infoSize = textRenderer.MeasureString(config.FontFamily, config.FontSize, info);
+                DrawString(new Vector2(window.Width - infoSize.X - 8, 8), info);
+            }
         }
 
-        public void Run() => window.Run();
+        private void Run()
+        {
+            serverConnection.Error += (s, e) => {
+                var error = e.Error;
+                Console.WriteLine($"[Client] Error: {error}");
+            };
+
+            serverConnection.Connected += (s, e) => {
+                Console.WriteLine($"[Client] Connected");
+                serverConnection.RequestChunks();
+            };
+
+            serverConnection.Disconnected += (s, e) => { Console.WriteLine($"[Client] Disconnected"); };
+
+            serverConnection.ChunkReceived += (s, e) => {
+                var chunk = e.Chunk;
+                world.SetChunk(chunk);
+            };
+
+            serverConnection.Run();
+            window.Run();
+        }
+
+        public void ConnectLocal(Queue<ServerMessage> incomingMessages, Queue<ClientMessage> outgoingMessages)
+        {
+            serverConnection = new LocalServerConnection(incomingMessages, outgoingMessages);
+            Run();
+        }
+
+        public void ConnectRemote(string host, int port)
+        {
+            serverConnection = new RemoteServerConnection(host, port);
+            Run();
+        }
 
         public void Dispose()
         {
@@ -263,8 +335,8 @@ namespace Cubach
 
             worldRenderer?.Dispose();
 
-            textProgram?.Dispose();
-            blockProgram?.Dispose();
+            uiProgram?.Dispose();
+            worldProgram?.Dispose();
             blockTextureAtlas?.Dispose();
 
             window.Dispose();

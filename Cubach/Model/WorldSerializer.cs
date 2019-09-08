@@ -11,6 +11,8 @@ namespace Cubach.Model
 
     public class WorldSerializer
     {
+        private readonly ChunkSerializer chunkSerializer = new ChunkSerializer();
+
         public void Save(Stream stream, World world)
         {
             using (var writer = new BinaryWriter(stream)) {
@@ -21,7 +23,7 @@ namespace Cubach.Model
                             writer.Write(key);
 
                             var chunk = world.GetChunk(i, j, k);
-                            var value = chunk.GetBytes();
+                            var value = chunkSerializer.ToByteArray(chunk);
                             writer.Write((byte) DataType.ByteArray);
                             writer.Write(value.Length);
                             writer.Write(value);
@@ -49,7 +51,7 @@ namespace Cubach.Model
                                 var i = int.Parse(blocksMatch.Groups[1].Value);
                                 var j = int.Parse(blocksMatch.Groups[2].Value);
                                 var k = int.Parse(blocksMatch.Groups[3].Value);
-                                var chunk = Chunk.Create(i, j, k, data);
+                                var chunk = chunkSerializer.FromByteArray(i, j, k, data);
                                 world.SetChunk(chunk);
                             }
 

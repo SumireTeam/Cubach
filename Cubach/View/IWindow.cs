@@ -18,8 +18,10 @@ namespace Cubach.View
 
         int Width { get; }
         int Height { get; }
+        bool HasFocus { get; }
 
         void Run();
         void MakeCurrent();
+        void Close();
     }
 }

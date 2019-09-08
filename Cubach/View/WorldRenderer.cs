@@ -9,7 +9,7 @@ namespace Cubach.View
 {
     public class WorldRenderer : IDisposable
     {
-        private const int MaxChunkUpdatesPerRender = 4;
+        private const int MaxChunkUpdatesPerRender = 2;
 
         private readonly Configuration config;
         private readonly World world;
@@ -95,7 +95,7 @@ namespace Cubach.View
                         }
 
                         // Skip chunk if it is not current and behind the player.
-                        if (distance > (Chunk.Length + Chunk.Width + Chunk.Height) / 2f) {
+                        if (distance > Chunk.Length + Chunk.Width + Chunk.Height) {
                             var direction = (chunkCenter - camera.Position).Normalized();
                             if (Vector3.Dot(playerDir, direction) < 0) {
                                 continue;

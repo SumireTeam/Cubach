@@ -1,6 +1,9 @@
 ﻿{
-  "fontFamily": "Open Sans",
-  "fontSize": 16,
+  "fontFamily": "OpenSans",
+  "fontSize": 14,
   "savePath": "./Saves",
-  "renderDistance": 384
+  "renderDistance": 384,
+  "width": 1024,
+  "height": 768,
+  "fullscreen": false
 }

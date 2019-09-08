@@ -15,12 +15,14 @@ namespace Cubach.View.OpenGL
         public event EventHandler Resize = (s, e) => { };
         public event EventHandler<TimeEventArgs> RenderFrame = (s, e) => { };
 
-        public GLWindow(int width, int height, string title)
+        public GLWindow(int width, int height, string title, bool fullscreen)
         {
-            var graphicsMode = new GraphicsMode(new ColorFormat(8, 8, 8, 8), depth: 24, stencil: 0, samples: 4,
+            var colorFormat = new ColorFormat(8, 8, 8, 8);
+            var graphicsMode = new GraphicsMode(colorFormat, depth: 24, stencil: 0, samples: 0,
                 accum: ColorFormat.Empty, buffers: 3);
-            window = new GameWindow(width, height, graphicsMode, title, GameWindowFlags.Default, DisplayDevice.Default,
-                4, 0, GraphicsContextFlags.ForwardCompatible);
+            var windowFlags = fullscreen ? GameWindowFlags.Fullscreen : GameWindowFlags.Default;
+            window = new GameWindow(width, height, graphicsMode, title, windowFlags, DisplayDevice.Default,
+                4, 0, GraphicsContextFlags.ForwardCompatible) {VSync = VSyncMode.On};
 
             window.Load += Window_Load;
             window.Resize += Window_Resize;
@@ -30,6 +32,7 @@ namespace Cubach.View.OpenGL
 
         public int Width => window.Width;
         public int Height => window.Height;
+        public bool HasFocus => window.Focused && window.Visible;
 
         private void Window_Load(object sender, EventArgs e)
         {
@@ -58,9 +61,6 @@ namespace Cubach.View.OpenGL
 
         private void Window_RenderFrame(object sender, FrameEventArgs e)
         {
-            GL.ClearColor(0.6f, 0.7f, 0.8f, 1);
-            GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
-
             RenderFrame(sender, new TimeEventArgs((float) e.Time));
 
             window.SwapBuffers();
@@ -69,9 +69,9 @@ namespace Cubach.View.OpenGL
 
         private void Window_Unload(object sender, EventArgs e) => Unload(sender, e);
 
-        public void Run() => window.Run();
-
+        public void Run() => window.Run(60, 60);
         public void MakeCurrent() => window.MakeCurrent();
+        public void Close() => window.Close();
         public void Dispose() => window.Dispose();
     }
 }

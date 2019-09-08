@@ -6,6 +6,8 @@ using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
 using System.Drawing.Text;
+using System.IO;
+using System.Linq;
 
 namespace Cubach.View
 {
@@ -51,10 +53,13 @@ namespace Cubach.View
 
             using (var graphics = Graphics.FromImage(bitmap)) {
                 Font font;
-                if (fontFamily == "Open Sans") {
+
+                var customFonts = Directory.GetDirectories("./Fonts");
+                var customFont = customFonts.FirstOrDefault(f => f == $"./Fonts/{fontFamily}");
+                if (customFont != null) {
                     using (var fontCollection = new PrivateFontCollection()) {
-                        fontCollection.AddFontFile("./Fonts/OpenSans/OpenSans-Semibold.ttf");
-                        font = new Font(fontCollection.Families[0], emSize, FontStyle.Bold);
+                        fontCollection.AddFontFile($"{customFont}/font.ttf");
+                        font = new Font(fontCollection.Families[0], emSize);
                     }
                 }
                 else {
