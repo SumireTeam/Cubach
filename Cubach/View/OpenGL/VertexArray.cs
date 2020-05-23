@@ -30,6 +30,7 @@ namespace Cubach.View.OpenGL
         private static readonly Dictionary<VertexAttributeType, VertexAttribPointerType> typeMap = new Dictionary<VertexAttributeType, VertexAttribPointerType>
         {
             [VertexAttributeType.Float] = VertexAttribPointerType.Float,
+            [VertexAttributeType.UnsignedByte] = VertexAttribPointerType.UnsignedByte,
         };
 
         public void SetVertexAttribute(int index, VertexAttribute attribute, VertexBuffer vertexBuffer)

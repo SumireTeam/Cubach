@@ -4,6 +4,7 @@ using System.Linq;
 using Cubach.Model;
 using Cubach.View.OpenGL;
 using OpenTK;
+using OpenTK.Graphics.OpenGL4;
 
 namespace Cubach.View
 {
@@ -112,6 +113,8 @@ namespace Cubach.View
                 }
             }
 
+            GL.Disable(EnableCap.Blend);
+
             foreach (var chunk in chunks.SelectMany(kv => kv.Value)) {
                 // Update chunk mesh if required.
                 if (chunkUpdates < MaxChunkUpdatesPerRender && chunkRequiresUpdate[chunk.X, chunk.Y, chunk.Z]) {
@@ -126,6 +129,8 @@ namespace Cubach.View
                 shader.SetUniform("mvp", ref mvp);
                 chunkMeshes[chunk.X, chunk.Y, chunk.Z].Draw();
             }
+
+            GL.Enable(EnableCap.Blend);
 
             foreach (var chunk in chunks.SelectMany(kv => kv.Value)) {
                 // Draw chunk semi-transparent mesh.

@@ -10,6 +10,8 @@ namespace Cubach.View.OpenGL
 
         public static explicit operator int(GLObjectHandle handle) => handle.Handle;
 
+        public static explicit operator IntPtr(GLObjectHandle handle) => (IntPtr)handle.Handle;
+
         protected abstract void ReleaseHandle();
 
         public void Dispose()

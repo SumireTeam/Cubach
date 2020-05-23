@@ -19,18 +19,29 @@ namespace Cubach.View.OpenGL
 
     public sealed class VertexBuffer : IDisposable
     {
+        public readonly BufferTarget BufferTarget;
         public readonly VertexBufferHandle Handle;
 
-        public VertexBuffer() => Handle = VertexBufferHandle.Create();
+        public VertexBuffer(BufferTarget bufferTarget = BufferTarget.ArrayBuffer)
+        {
+            BufferTarget = bufferTarget;
+            Handle = VertexBufferHandle.Create();
+        }
 
-        public void Bind() => GL.BindBuffer(BufferTarget.ArrayBuffer, (int)Handle);
+        public void Bind() => GL.BindBuffer(BufferTarget, (int)Handle);
 
-        public static void Unbind() => GL.BindBuffer(BufferTarget.ArrayBuffer, 0);
+        public static void Unbind(BufferTarget bufferTarget = BufferTarget.ArrayBuffer) => GL.BindBuffer(bufferTarget, 0);
+
+        public void SetData(IntPtr data, int size, BufferUsageHint hint = BufferUsageHint.StaticDraw)
+        {
+            Bind();
+            GL.BufferData(BufferTarget, size, data, hint);
+        }
 
         public void SetData<T>(T[] data, BufferUsageHint hint = BufferUsageHint.StaticDraw) where T : struct
         {
             Bind();
-            GL.BufferData(BufferTarget.ArrayBuffer, Marshal.SizeOf<T>() * data.Length, data, hint);
+            GL.BufferData(BufferTarget, Marshal.SizeOf<T>() * data.Length, data, hint);
         }
 
         public void Dispose() => Handle.Dispose();

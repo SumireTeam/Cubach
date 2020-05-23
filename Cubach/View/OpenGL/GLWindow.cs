@@ -13,23 +13,27 @@ namespace Cubach.View.OpenGL
         public event EventHandler Load = (s, e) => { };
         public event EventHandler Unload = (s, e) => { };
         public event EventHandler Resize = (s, e) => { };
+        public event EventHandler<KeyPressEventArgs> KeyPress = (s, e) => { };
         public event EventHandler<TimeEventArgs> RenderFrame = (s, e) => { };
 
         public GLWindow(int width, int height, string title, bool fullscreen)
         {
             var colorFormat = new ColorFormat(8, 8, 8, 8);
-            var graphicsMode = new GraphicsMode(colorFormat, depth: 24, stencil: 0, samples: 0,
+            var graphicsMode = new GraphicsMode(colorFormat, depth: 24, stencil: 8, samples: 4,
                 accum: ColorFormat.Empty, buffers: 3);
             var windowFlags = fullscreen ? GameWindowFlags.Fullscreen : GameWindowFlags.Default;
             window = new GameWindow(width, height, graphicsMode, title, windowFlags, DisplayDevice.Default,
-                4, 0, GraphicsContextFlags.ForwardCompatible) {VSync = VSyncMode.On};
+                4, 0, GraphicsContextFlags.ForwardCompatible)
+            { VSync = VSyncMode.On, CursorVisible = false };
 
             window.Load += Window_Load;
             window.Resize += Window_Resize;
+            window.KeyPress += Window_KeyPress;
             window.RenderFrame += Window_RenderFrame;
             window.Unload += Window_Unload;
         }
 
+        public INativeWindow NativeWindow => window;
         public int Width => window.Width;
         public int Height => window.Height;
         public bool HasFocus => window.Focused && window.Visible;
@@ -59,9 +63,14 @@ namespace Cubach.View.OpenGL
 
         private void Window_Resize(object sender, EventArgs e) => Resize(sender, e);
 
+        private void Window_KeyPress(object sender, OpenTK.KeyPressEventArgs e)
+        {
+            KeyPress(sender, new KeyPressEventArgs(e.KeyChar));
+        }
+
         private void Window_RenderFrame(object sender, FrameEventArgs e)
         {
-            RenderFrame(sender, new TimeEventArgs((float) e.Time));
+            RenderFrame(sender, new TimeEventArgs((float)e.Time));
 
             window.SwapBuffers();
             Thread.Sleep(1);

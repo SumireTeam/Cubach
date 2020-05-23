@@ -3,6 +3,7 @@
     public enum VertexAttributeType
     {
         Float,
+        UnsignedByte,
     }
 
     public struct VertexAttribute
